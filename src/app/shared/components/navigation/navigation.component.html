@@ -1,0 +1,65 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <div class="navbar-brand">
+      <svg class="brand-icon" width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="14" height="14" fill="#f25022"/>
+        <rect x="16" y="0" width="14" height="14" fill="#7fba00"/>
+        <rect x="0" y="16" width="14" height="14" fill="#00a4ef"/>
+        <rect x="16" y="16" width="14" height="14" fill="#ffb900"/>
+      </svg>
+      <span class="brand-text">AIVA Admin</span>
+    </div>
+
+    <div class="navbar-menu">
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 2.5L2.5 8.33333V17.5H7.5V12.5H12.5V17.5H17.5V8.33333L10 2.5Z" fill="currentColor"/>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+    </div>
+
+    <div class="navbar-user">
+      <button class="user-button" (click)="toggleMenu()" [class.active]="isMenuOpen">
+        <div class="user-avatar">
+          {{ userInitials }}
+        </div>
+        <div class="user-info">
+          <span class="user-name">{{ userName }}</span>
+          <span class="user-email">{{ userEmail }}</span>
+        </div>
+        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      @if (isMenuOpen) {
+        <div class="dropdown-menu" (click)="closeMenu()">
+          <div class="dropdown-header">
+            <div class="dropdown-avatar">
+              {{ userInitials }}
+            </div>
+            <div class="dropdown-info">
+              <span class="dropdown-name">{{ userName }}</span>
+              <span class="dropdown-email">{{ userEmail }}</span>
+            </div>
+          </div>
+
+          <div class="dropdown-divider"></div>
+
+          <button class="dropdown-item" (click)="logout()">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7.5 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5M13.3333 14.1667L17.5 10L13.3333 5.83333M17.5 10H7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</nav>
+
+@if (isMenuOpen) {
+  <div class="dropdown-backdrop" (click)="closeMenu()"></div>
+}
+

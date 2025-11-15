@@ -40,3 +40,11 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment files (contain sensitive configuration)
+src/environments/environment.ts
+src/environments/environment.prod.ts
+
+# Compiled CSS from SCSS
+src/**/*.component.css
+src/**/*.component.css.map

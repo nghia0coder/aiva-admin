@@ -1,0 +1,218 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.login-header {
+  padding: 3rem 2rem 2rem;
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.95;
+  }
+}
+
+.login-content {
+  padding: 3rem 2rem;
+}
+
+.logo-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+
+  .microsoft-logo {
+    animation: fadeIn 0.6s ease-in-out;
+  }
+}
+
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  .btn-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  .btn-primary {
+    background: #0078d4;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: #106ebe;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #0078d4;
+    border: 2px solid #0078d4;
+
+    &:hover:not(:disabled) {
+      background: #f3f2f1;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 0.5rem 0;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e1e1e1;
+  }
+
+  span {
+    padding: 0 1rem;
+    color: #8a8886;
+    font-size: 0.875rem;
+  }
+}
+
+.login-info {
+  margin-top: 2rem;
+
+  .info-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 1rem;
+    background: #f3f2f1;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #605e5c;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+}
+
+.login-footer {
+  padding: 1.5rem 2rem;
+  text-align: center;
+  background: #f3f2f1;
+  border-top: 1px solid #e1e1e1;
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #8a8886;
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .login-container {
+    padding: 1rem;
+  }
+
+  .login-header {
+    padding: 2rem 1.5rem 1.5rem;
+
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    p {
+      font-size: 0.875rem;
+    }
+  }
+
+  .login-content {
+    padding: 2rem 1.5rem;
+  }
+
+  .logo-section .microsoft-logo {
+    width: 80px;
+    height: 80px;
+  }
+}
+

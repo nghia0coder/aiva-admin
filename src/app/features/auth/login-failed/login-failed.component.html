@@ -1,0 +1,41 @@
+<div class="login-failed-container">
+  <div class="login-failed-card">
+    <div class="error-icon">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="40" cy="40" r="40" fill="#FDE7E9"/>
+        <path d="M40 20C28.96 20 20 28.96 20 40C20 51.04 28.96 60 40 60C51.04 60 60 51.04 60 40C60 28.96 51.04 20 40 20ZM42 50H38V46H42V50ZM42 42H38V30H42V42Z" fill="#D13438"/>
+      </svg>
+    </div>
+
+    <h1>Login Failed</h1>
+    <p class="error-message">
+      We couldn't authenticate you with Azure AD. This could be due to one of the following reasons:
+    </p>
+
+    <ul class="error-reasons">
+      <li>Your account doesn't have permission to access this application</li>
+      <li>The authentication request was cancelled</li>
+      <li>There was a network or connection issue</li>
+      <li>Your session has expired</li>
+    </ul>
+
+    <div class="action-buttons">
+      <a routerLink="/login" class="btn-primary">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4.01 7.58 4.01 12C4.01 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/>
+        </svg>
+        Try Again
+      </a>
+    </div>
+
+    <div class="help-section">
+      <p class="help-text">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 0C3.6 0 0 3.6 0 8C0 12.4 3.6 16 8 16C12.4 16 16 12.4 16 8C16 3.6 12.4 0 8 0ZM8 12C7.4 12 7 11.6 7 11C7 10.4 7.4 10 8 10C8.6 10 9 10.4 9 11C9 11.6 8.6 12 8 12ZM9 9H7V4H9V9Z" fill="#0078D4"/>
+        </svg>
+        If you continue to experience issues, please contact your system administrator.
+      </p>
+    </div>
+  </div>
+</div>
+

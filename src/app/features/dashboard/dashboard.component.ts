@@ -1,0 +1,71 @@
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AuthService } from '../../core/services/auth.service';
+import { NavigationComponent } from '../../shared/components/navigation/navigation.component';
+import { Subject, takeUntil } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+interface UserProfile {
+  displayName?: string;
+  mail?: string;
+  userPrincipalName?: string;
+  jobTitle?: string;
+  officeLocation?: string;
+  mobilePhone?: string;
+  businessPhones?: string[];
+}
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, NavigationComponent],
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.scss']
+})
+export class DashboardComponent implements OnInit, OnDestroy {
+  private readonly authService = inject(AuthService);
+  private readonly http = inject(HttpClient);
+  private readonly destroy$ = new Subject<void>();
+
+  userProfile: UserProfile | null = null;
+  isLoadingProfile = false;
+  profileError: string | null = null;
+
+  ngOnInit(): void {
+    this.loadUserProfile();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  loadUserProfile(): void {
+    this.isLoadingProfile = true;
+    this.profileError = null;
+
+    this.http.get<UserProfile>(environment.apiConfig.uri)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (profile) => {
+          this.userProfile = profile;
+          this.isLoadingProfile = false;
+        },
+        error: (error) => {
+          console.error('Error loading user profile:', error);
+          this.profileError = 'Failed to load user profile. Please try again.';
+          this.isLoadingProfile = false;
+        }
+      });
+  }
+
+  get userName(): string {
+    return this.authService.getUserDisplayName();
+  }
+
+  get userEmail(): string {
+    return this.authService.getUserEmail();
+  }
+}
+

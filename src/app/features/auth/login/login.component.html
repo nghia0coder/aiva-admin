@@ -1,0 +1,50 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>Welcome to AIVA Admin</h1>
+      <p>Sign in with your Microsoft account to continue</p>
+    </div>
+
+    <div class="login-content">
+      <div class="logo-section">
+        <svg class="microsoft-logo" width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="56" height="56" fill="#f25022"/>
+          <rect x="64" y="0" width="56" height="56" fill="#7fba00"/>
+          <rect x="0" y="64" width="56" height="56" fill="#00a4ef"/>
+          <rect x="64" y="64" width="56" height="56" fill="#ffb900"/>
+        </svg>
+      </div>
+
+      <div class="login-actions">
+        <button 
+          class="btn-primary btn-login" 
+          (click)="login()"
+          [disabled]="isLoading">
+          @if (isLoading) {
+            <span class="spinner"></span>
+            <span>Signing in...</span>
+          } @else {
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM10 3C11.66 3 13 4.34 13 6C13 7.66 11.66 9 10 9C8.34 9 7 7.66 7 6C7 4.34 8.34 3 10 3ZM10 17.2C7.5 17.2 5.29 15.92 4 13.98C4.03 11.99 8 10.9 10 10.9C11.99 10.9 15.97 11.99 16 13.98C14.71 15.92 12.5 17.2 10 17.2Z" fill="currentColor"/>
+            </svg>
+            <span>Sign in with Microsoft</span>
+          }
+        </button>
+      </div>
+
+      <div class="login-info">
+        <p class="info-text">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 0C3.6 0 0 3.6 0 8C0 12.4 3.6 16 8 16C12.4 16 16 12.4 16 8C16 3.6 12.4 0 8 0ZM8 12C7.4 12 7 11.6 7 11C7 10.4 7.4 10 8 10C8.6 10 9 10.4 9 11C9 11.6 8.6 12 8 12ZM9 9H7V4H9V9Z" fill="#0078D4"/>
+          </svg>
+          You will be redirected to Microsoft's secure login page
+        </p>
+      </div>
+    </div>
+
+    <div class="login-footer">
+      <p>&copy; 2024 AIVA Admin. All rights reserved.</p>
+    </div>
+  </div>
+</div>
+
