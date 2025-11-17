@@ -1,0 +1,153 @@
+trigger:
+  branches:
+    include:
+      - dev
+  paths:
+    exclude:
+      - README.md
+      - docs/*
+      - "**/*.md"
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  nodeVersion: "20.x"
+  buildConfiguration: "production"
+  projectName: "aiva-admin"
+  azureSubscription: "aiva-azure-connection"
+  appServiceName: "aiva-admin"
+
+stages:
+  # Stage 1: Build
+  - stage: Build
+    displayName: "Build Angular SSR Application"
+    jobs:
+      - job: BuildJob
+        displayName: "Build and Package"
+        steps:
+          # Install Node.js
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(nodeVersion)"
+            displayName: "Install Node.js $(nodeVersion)"
+
+          # Install dependencies
+          - script: |
+              echo "Installing dependencies..."
+              npm ci --prefer-offline --no-audit
+            displayName: "npm ci - Install dependencies"
+
+          # Build application
+          - script: |
+              echo "Building Angular application for production..."
+              npm run build -- --configuration=$(buildConfiguration)
+            displayName: "Build Angular SSR application"
+
+          # Verify build output
+          - script: |
+              echo "Verifying build output..."
+              ls -la dist/$(projectName)
+              ls -la dist/$(projectName)/server
+              ls -la dist/$(projectName)/browser
+            displayName: "Verify build output"
+
+          # Copy package files for production dependencies
+          - script: |
+              echo "Preparing package.json for production..."
+              cp package.json dist/$(projectName)/
+              cp package-lock.json dist/$(projectName)/
+            displayName: "Copy package files"
+
+          # Create web.config for Azure App Service
+          - script: |
+              cat > dist/$(projectName)/web.config << 'EOF'
+              <?xml version="1.0" encoding="utf-8"?>
+              <configuration>
+                <system.webServer>
+                  <handlers>
+                    <add name="iisnode" path="server/server.mjs" verb="*" modules="iisnode"/>
+                  </handlers>
+                  <rewrite>
+                    <rules>
+                      <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
+                        <match url="^server/server.mjs\/debug[\/]?" />
+                      </rule>
+                      <rule name="StaticContent">
+                        <action type="Rewrite" url="public{REQUEST_URI}"/>
+                      </rule>
+                      <rule name="DynamicContent">
+                        <conditions>
+                          <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
+                        </conditions>
+                        <action type="Rewrite" url="server/server.mjs"/>
+                      </rule>
+                    </rules>
+                  </rewrite>
+                  <security>
+                    <requestFiltering>
+                      <hiddenSegments>
+                        <remove segment="bin"/>
+                      </hiddenSegments>
+                    </requestFiltering>
+                  </security>
+                  <httpErrors existingResponse="PassThrough" />
+                  <iisnode watchedFiles="*.js;*.mjs"/>
+                </system.webServer>
+              </configuration>
+              EOF
+            displayName: "Create web.config"
+
+          # Archive artifacts
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: "$(System.DefaultWorkingDirectory)/dist/$(projectName)"
+              includeRootFolder: false
+              archiveType: "zip"
+              archiveFile: "$(Build.ArtifactStagingDirectory)/$(projectName)-$(Build.BuildId).zip"
+              replaceExistingArchive: true
+            displayName: "Archive build artifacts"
+
+          # Publish artifacts
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: "$(Build.ArtifactStagingDirectory)"
+              artifactName: "drop"
+              publishLocation: "Container"
+            displayName: "Publish build artifacts"
+
+  # Stage 2: Deploy
+  - stage: Deploy
+    displayName: "Deploy to Azure App Service"
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: DeployToDev
+        displayName: "Deploy to Dev Environment"
+        environment: "dev"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                # Download artifacts
+                - download: current
+                  artifact: drop
+                  displayName: "Download build artifacts"
+
+                # Deploy to Azure App Service
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: "$(azureSubscription)"
+                    appType: "webAppLinux"
+                    appName: "$(appServiceName)"
+                    package: "$(Pipeline.Workspace)/drop/$(projectName)-$(Build.BuildId).zip"
+                    runtimeStack: "NODE|20-lts"
+                    startUpCommand: "npm install --omit=dev && node server/server.mjs"
+                  displayName: "Deploy to Azure App Service"
+
+                # Restart App Service
+                - task: AzureAppServiceManage@0
+                  inputs:
+                    azureSubscription: "$(azureSubscription)"
+                    Action: "Restart Azure App Service"
+                    WebAppName: "$(appServiceName)"
+                  displayName: "Restart App Service"
