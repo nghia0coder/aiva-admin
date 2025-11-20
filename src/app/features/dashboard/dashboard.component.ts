@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { NavigationComponent } from '../../shared/components/navigation/navigation.component';
 import { Subject, takeUntil } from 'rxjs';
@@ -26,6 +26,7 @@ interface UserProfile {
 export class DashboardComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly http = inject(HttpClient);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly destroy$ = new Subject<void>();
 
   userProfile: UserProfile | null = null;
@@ -33,7 +34,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   profileError: string | null = null;
 
   ngOnInit(): void {
-    this.loadUserProfile();
+    // Only load profile on browser
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadUserProfile();
+    }
   }
 
   ngOnDestroy(): void {

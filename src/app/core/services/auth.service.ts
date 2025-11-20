@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import {
   AuthenticationResult,
@@ -16,6 +17,7 @@ import { Observable, Subject, filter } from 'rxjs';
 export class AuthService {
   private readonly msalService = inject(MsalService);
   private readonly msalBroadcastService = inject(MsalBroadcastService);
+  private readonly platformId = inject(PLATFORM_ID);
   
   private readonly _destroying$ = new Subject<void>();
 
@@ -27,6 +29,11 @@ export class AuthService {
    * Initialize MSAL and handle redirect promise
    */
   private initializeMsal(): void {
+    // Only initialize on browser
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     this.msalService.instance.initialize().then(() => {
       this.msalService.instance.handleRedirectPromise().then((result: AuthenticationResult | null) => {
         if (result) {
@@ -83,6 +90,10 @@ export class AuthService {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
+    // During SSR, always return false
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
+    }
     return this.msalService.instance.getAllAccounts().length > 0;
   }
 

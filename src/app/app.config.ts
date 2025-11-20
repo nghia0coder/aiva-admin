@@ -1,7 +1,8 @@
-import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection, PLATFORM_ID } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptorsFromDi, withFetch } from '@angular/common/http';
+import { isPlatformBrowser } from '@angular/common';
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import {
@@ -129,6 +130,13 @@ export const appConfig: ApplicationConfig = {
     MsalGuard,
     MsalBroadcastService,
     provideAppInitializer(() => {
+      const platformId = inject(PLATFORM_ID);
+      
+      // Only initialize MSAL on browser
+      if (!isPlatformBrowser(platformId)) {
+        return Promise.resolve();
+      }
+      
       const msalService = inject(MsalService);
       return msalService.instance.initialize().then(() => {
         return msalService.instance.handleRedirectPromise().then((result) => {
