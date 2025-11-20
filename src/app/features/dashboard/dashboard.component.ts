@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
-import { NavigationComponent } from '../../shared/components/navigation/navigation.component';
+import { HeaderComponent } from '../../shared/layout/header/header.component';
 import { Subject, takeUntil } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -19,7 +19,7 @@ interface UserProfile {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, NavigationComponent],
+  imports: [CommonModule, HeaderComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })

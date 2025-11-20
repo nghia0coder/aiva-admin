@@ -4,15 +4,15 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
-  selector: 'app-navigation',
+  selector: 'app-header',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './navigation.component.html',
-  styleUrls: ['./navigation.component.scss']
+  templateUrl: './header.component.html',
+  styleUrls: ['./header.component.scss']
 })
-export class NavigationComponent {
+export class HeaderComponent {
   private readonly authService = inject(AuthService);
-  
+
   isMenuOpen = false;
 
   get userName(): string {

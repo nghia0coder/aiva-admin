@@ -9,16 +9,6 @@
       </svg>
       <span class="brand-text">AIVA Admin</span>
     </div>
-
-    <div class="navbar-menu">
-      <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 2.5L2.5 8.33333V17.5H7.5V12.5H12.5V17.5H17.5V8.33333L10 2.5Z" fill="currentColor"/>
-        </svg>
-        <span>Dashboard</span>
-      </a>
-    </div>
-
     <div class="navbar-user">
       <button class="user-button" (click)="toggleMenu()" [class.active]="isMenuOpen">
         <div class="user-avatar">
@@ -32,7 +22,6 @@
           <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-
       @if (isMenuOpen) {
         <div class="dropdown-menu" (click)="closeMenu()">
           <div class="dropdown-header">
