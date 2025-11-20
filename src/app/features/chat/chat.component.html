@@ -1,0 +1,100 @@
+<div class="chat-container">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="page-title">Chat</h1>
+        <p class="page-description">Communicate with your team in real-time</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-wrapper">
+    <div class="conversations-panel">
+      <div class="panel-header">
+        <h2>Conversations</h2>
+        <button class="new-chat-button">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 5V15M5 10H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="conversations-list">
+        @for (conv of conversations; track conv.id) {
+          <div 
+            class="conversation-item" 
+            [class.active]="selectedConversation.id === conv.id"
+            (click)="selectConversation(conv)"
+          >
+            <div class="conversation-avatar">
+              {{ conv.name.charAt(0) }}
+            </div>
+            <div class="conversation-content">
+              <div class="conversation-header">
+                <span class="conversation-name">{{ conv.name }}</span>
+                <span class="conversation-time">{{ conv.time }}</span>
+              </div>
+              <div class="conversation-footer">
+                <span class="conversation-message">{{ conv.lastMessage }}</span>
+                @if (conv.unread > 0) {
+                  <span class="unread-badge">{{ conv.unread }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="messages-panel">
+      <div class="messages-header">
+        <div class="header-info">
+          <div class="conversation-avatar">
+            {{ selectedConversation.name.charAt(0) }}
+          </div>
+          <div>
+            <h3>{{ selectedConversation.name }}</h3>
+            <span class="status">Active now</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="messages-content">
+        @for (message of messages; track message.id) {
+          <div class="message" [class.own]="message.isOwn">
+            @if (!message.isOwn) {
+              <div class="message-avatar">
+                {{ message.sender.charAt(0) }}
+              </div>
+            }
+            <div class="message-bubble">
+              @if (!message.isOwn) {
+                <span class="message-sender">{{ message.sender }}</span>
+              }
+              <p class="message-text">{{ message.content }}</p>
+              <span class="message-time">{{ message.time }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="message-input-wrapper">
+        <input 
+          type="text" 
+          class="message-input" 
+          placeholder="Type a message..."
+        />
+        <button class="send-button">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 10L18 2L10 18L8 11L2 10Z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

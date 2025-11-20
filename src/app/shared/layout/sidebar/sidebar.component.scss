@@ -1,0 +1,262 @@
+.sidebar {
+  position: fixed;
+  top: 72px;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: white;
+  border-right: 1px solid #e1e4e8;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 900;
+
+  &.collapsed {
+    width: 72px;
+
+    .sidebar-header {
+      padding: 1rem;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      .navbar-brand {
+        justify-content: center;
+      }
+
+      .toggle-button {
+        margin: 0;
+      }
+    }
+
+    .sidebar-nav {
+      padding: 0.5rem;
+    }
+
+    .nav-item {
+      justify-content: center;
+      padding: 1rem;
+
+      .nav-icon {
+        margin: 0;
+      }
+    }
+
+    .sidebar-footer {
+      padding: 1rem;
+    }
+  }
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .brand-icon {
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+  }
+
+  .brand-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e1e4e8;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .toggle-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #606060;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #f5f7fa;
+      color: #0078d4;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #e1e4e8;
+    border-radius: 3px;
+
+    &:hover {
+      background: #c1c4c8;
+    }
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    color: #606060;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    transition: all 0.2s ease;
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+
+    &:hover {
+      background: #f5f7fa;
+      color: #0078d4;
+
+      .nav-icon {
+        color: #0078d4;
+      }
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
+      .nav-icon {
+        color: white;
+      }
+
+      .nav-badge {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+      }
+    }
+
+    .nav-icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      color: inherit;
+      transition: color 0.2s ease;
+
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    .nav-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 0.5rem;
+      background: #e8f0fe;
+      color: #0078d4;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+  }
+}
+
+.sidebar-footer {
+  border-top: 1px solid #e1e4e8;
+  padding: 1rem 1.5rem;
+  flex-shrink: 0;
+
+  .sidebar-version {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .version-text {
+      font-size: 0.75rem;
+      color: #909090;
+      font-weight: 500;
+    }
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+
+    &:not(.collapsed) {
+      transform: translateX(0);
+      box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    top: 64px;
+  }
+}
+
+/* Animations */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+

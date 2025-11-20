@@ -14,8 +14,8 @@
   padding: 0 2rem;
   height: 72px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: end;
+  justify-content: end;
   gap: 2rem;
 }
 
@@ -258,10 +258,6 @@
   .navbar-container {
     padding: 0 1rem;
     height: 64px;
-  }
-
-  .navbar-brand .brand-text {
-    display: none;
   }
 
   .navbar-menu .nav-link span {
