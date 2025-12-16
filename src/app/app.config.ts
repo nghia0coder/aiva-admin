@@ -131,12 +131,12 @@ export const appConfig: ApplicationConfig = {
     MsalBroadcastService,
     provideAppInitializer(() => {
       const platformId = inject(PLATFORM_ID);
-      
+
       // Only initialize MSAL on browser
       if (!isPlatformBrowser(platformId)) {
         return Promise.resolve();
       }
-      
+
       const msalService = inject(MsalService);
       return msalService.instance.initialize().then(() => {
         return msalService.instance.handleRedirectPromise().then((result) => {

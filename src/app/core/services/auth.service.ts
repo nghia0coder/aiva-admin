@@ -4,10 +4,7 @@ import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import {
   AuthenticationResult,
   InteractionStatus,
-  PopupRequest,
-  RedirectRequest,
   EventMessage,
-  EventType
 } from '@azure/msal-browser';
 import { Observable, Subject, filter } from 'rxjs';
 
@@ -18,7 +15,7 @@ export class AuthService {
   private readonly msalService = inject(MsalService);
   private readonly msalBroadcastService = inject(MsalBroadcastService);
   private readonly platformId = inject(PLATFORM_ID);
-  
+
   private readonly _destroying$ = new Subject<void>();
 
   constructor() {
@@ -130,7 +127,7 @@ export class AuthService {
    */
   acquireTokenSilent(scopes: string[]): Observable<AuthenticationResult> {
     const account = this.getActiveAccount();
-    
+
     if (!account) {
       throw new Error('No active account! Please login first.');
     }

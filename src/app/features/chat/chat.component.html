@@ -1,100 +1,357 @@
-<div class="chat-container">
-  <div class="page-header">
-    <div class="header-content">
-      <div class="header-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/>
+<div class="ai-chat-container" [class.sidebar-collapsed]="isSidebarCollapsed">
+  <!-- Sidebar with conversation history -->
+  <aside class="chat-sidebar">
+    <div class="sidebar-header">
+      <button class="new-chat-btn" (click)="startNewChat()">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+            fill="currentColor"
+          />
         </svg>
-      </div>
-      <div>
-        <h1 class="page-title">Chat</h1>
-        <p class="page-description">Communicate with your team in real-time</p>
-      </div>
+        <span class="btn-text">New chat</span>
+      </button>
+      <button class="collapse-btn" (click)="toggleSidebar()">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M3 18H21V16H3V18ZM3 13H21V11H3V13ZM3 6V8H21V6H3Z"
+            fill="currentColor"
+          />
+        </svg>
+      </button>
     </div>
-  </div>
 
-  <div class="chat-wrapper">
-    <div class="conversations-panel">
-      <div class="panel-header">
-        <h2>Conversations</h2>
-        <button class="new-chat-button">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 5V15M5 10H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <div class="conversations-list">
+      @for (conversation of conversations; track conversation.id) {
+      <div
+        class="conversation-item"
+        [class.active]="currentConversation?.id === conversation.id"
+        (click)="selectConversation(conversation)"
+      >
+        <svg
+          class="chat-icon"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z"
+            fill="currentColor"
+          />
+        </svg>
+        <span class="conversation-title">{{ conversation.title }}</span>
+        <button
+          class="delete-btn"
+          (click)="deleteConversation($event, conversation)"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"
+              fill="currentColor"
+            />
           </svg>
         </button>
       </div>
-      <div class="conversations-list">
-        @for (conv of conversations; track conv.id) {
-          <div 
-            class="conversation-item" 
-            [class.active]="selectedConversation.id === conv.id"
-            (click)="selectConversation(conv)"
-          >
-            <div class="conversation-avatar">
-              {{ conv.name.charAt(0) }}
-            </div>
-            <div class="conversation-content">
-              <div class="conversation-header">
-                <span class="conversation-name">{{ conv.name }}</span>
-                <span class="conversation-time">{{ conv.time }}</span>
-              </div>
-              <div class="conversation-footer">
-                <span class="conversation-message">{{ conv.lastMessage }}</span>
-                @if (conv.unread > 0) {
-                  <span class="unread-badge">{{ conv.unread }}</span>
-                }
-              </div>
-            </div>
-          </div>
-        }
-      </div>
+      }
     </div>
 
-    <div class="messages-panel">
-      <div class="messages-header">
-        <div class="header-info">
-          <div class="conversation-avatar">
-            {{ selectedConversation.name.charAt(0) }}
+    <div class="sidebar-footer">
+      <div class="model-selector">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"
+            fill="currentColor"
+          />
+          <circle cx="12" cy="12" r="3" fill="currentColor" />
+        </svg>
+        <span>{{ currentModel }}</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Toggle button for collapsed sidebar -->
+  @if (isSidebarCollapsed) {
+  <button class="sidebar-toggle-btn" (click)="toggleSidebar()">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M3 18H21V16H3V18ZM3 13H21V11H3V13ZM3 6V8H21V6H3Z"
+        fill="currentColor"
+      />
+    </svg>
+  </button>
+  }
+
+  <!-- Main chat area -->
+  <main class="chat-main">
+    @if (!hasMessages) {
+    <!-- Welcome Screen -->
+    <div class="welcome-screen">
+      <div class="welcome-content">
+        <div class="ai-logo">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z"
+              fill="url(#gradient1)"
+            />
+            <path
+              d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z"
+              fill="white"
+            />
+            <circle cx="12" cy="12" r="2" fill="white" />
+            <defs>
+              <linearGradient
+                id="gradient1"
+                x1="2"
+                y1="2"
+                x2="22"
+                y2="22"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stop-color="#667eea" />
+                <stop offset="1" stop-color="#764ba2" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1 class="welcome-title">How can I help you today?</h1>
+        <p class="welcome-subtitle">
+          I'm AIVA, your AI assistant. Ask me anything or choose a suggestion
+          below.
+        </p>
+
+        <div class="suggested-prompts">
+          @for (prompt of suggestedPrompts; track prompt.title) {
+          <button class="prompt-card" (click)="selectPrompt(prompt)">
+            <span class="prompt-icon">{{ prompt.icon }}</span>
+            <div class="prompt-text">
+              <span class="prompt-title">{{ prompt.title }}</span>
+              <span class="prompt-description">{{ prompt.description }}</span>
+            </div>
+          </button>
+          }
+        </div>
+      </div>
+    </div>
+    } @else {
+    <!-- Messages Area -->
+    <div class="messages-area" #messagesContainer>
+      @for (message of messages; track message.id) {
+      <div class="message-row" [class.user-message]="message.role === 'user'">
+        <div class="message-container">
+          @if (message.role === 'assistant') {
+          <div class="avatar ai-avatar">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z"
+                fill="url(#gradient2)"
+              />
+              <path
+                d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z"
+                fill="white"
+              />
+              <circle cx="12" cy="12" r="2" fill="white" />
+              <defs>
+                <linearGradient
+                  id="gradient2"
+                  x1="2"
+                  y1="2"
+                  x2="22"
+                  y2="22"
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop stop-color="#667eea" />
+                  <stop offset="1" stop-color="#764ba2" />
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
-          <div>
-            <h3>{{ selectedConversation.name }}</h3>
-            <span class="status">Active now</span>
+          }
+
+          <div class="message-content">
+            @if (message.role === 'assistant') {
+            <span class="message-sender">AIVA</span>
+            }
+            <div
+              class="message-text"
+              [innerHTML]="message.content | slice : 0 : 10000"
+            ></div>
+
+            @if (message.isStreaming) {
+            <span class="typing-cursor"></span>
+            } @if (message.role === 'assistant' && !message.isStreaming) {
+            <div class="message-actions">
+              <button
+                class="action-btn"
+                title="Copy"
+                (click)="copyMessage(message)"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+              <button
+                class="action-btn"
+                title="Regenerate"
+                (click)="regenerateResponse(message)"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4.01 7.58 4.01 12C4.01 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+            </div>
+            }
           </div>
         </div>
       </div>
-
-      <div class="messages-content">
-        @for (message of messages; track message.id) {
-          <div class="message" [class.own]="message.isOwn">
-            @if (!message.isOwn) {
-              <div class="message-avatar">
-                {{ message.sender.charAt(0) }}
-              </div>
-            }
-            <div class="message-bubble">
-              @if (!message.isOwn) {
-                <span class="message-sender">{{ message.sender }}</span>
-              }
-              <p class="message-text">{{ message.content }}</p>
-              <span class="message-time">{{ message.time }}</span>
+      } @if (isLoading && messages[messages.length - 1]?.role === 'user') {
+      <div class="message-row">
+        <div class="message-container">
+          <div class="avatar ai-avatar">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z"
+                fill="url(#gradient3)"
+              />
+              <path
+                d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z"
+                fill="white"
+              />
+              <circle cx="12" cy="12" r="2" fill="white" />
+              <defs>
+                <linearGradient
+                  id="gradient3"
+                  x1="2"
+                  y1="2"
+                  x2="22"
+                  y2="22"
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop stop-color="#667eea" />
+                  <stop offset="1" stop-color="#764ba2" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="message-content">
+            <span class="message-sender">AIVA</span>
+            <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
           </div>
-        }
+        </div>
       </div>
+      }
+    </div>
+    }
 
-      <div class="message-input-wrapper">
-        <input 
-          type="text" 
-          class="message-input" 
-          placeholder="Type a message..."
-        />
-        <button class="send-button">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 10L18 2L10 18L8 11L2 10Z" fill="currentColor"/>
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-container">
+        <textarea
+          #messageInput
+          class="message-input"
+          [(ngModel)]="userInput"
+          (keydown)="onKeyDown($event)"
+          placeholder="Message AIVA..."
+          rows="1"
+          [disabled]="isLoading"
+        ></textarea>
+        <button
+          class="send-btn"
+          [disabled]="!userInput.trim() || isLoading"
+          (click)="sendMessage()"
+        >
+          @if (isLoading) {
+          <div class="btn-spinner"></div>
+          } @else {
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z"
+              fill="currentColor"
+            />
           </svg>
+          }
         </button>
       </div>
+      <p class="input-disclaimer">
+        AIVA can make mistakes. Consider checking important information.
+      </p>
     </div>
-  </div>
+  </main>
 </div>
-
