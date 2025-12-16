@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "node dist/aiva-admin/server/server.mjs",
-    "start:dev": "ng serve",
+    "start": "ng serve --port %PORT%",
+    "start:aspire": "ng serve --port %PORT% --proxy-config proxy.conf.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
