@@ -16,9 +16,9 @@ export class ChatService {
 
     // API endpoints
     private readonly endpoints = {
-        streamChat: '/chat/stream',
+        streamChat: (conversationId: string) => `/conversations/${conversationId}/stream`,
         conversations: '/conversations',
-        messages: (conversationId: string) => `/api/conversations/${conversationId}/messages`
+        messages: (conversationId: string) => `/conversations/${conversationId}/messages`
     };
 
     // State management
@@ -34,7 +34,7 @@ export class ChatService {
             message
         };
 
-        return this.api.stream<StreamChatResponse>(this.endpoints.streamChat, request);
+        return this.api.stream<StreamChatResponse>(this.endpoints.streamChat(conversationId), request);
     }
 
     /**
@@ -50,7 +50,7 @@ export class ChatService {
             tap(conversation => {
                 const current = this.conversationsSubject.value;
                 const newConversation: Conversation = {
-                    id: conversation.id,
+                    id: conversation.conversationId,
                     title: conversation.title,
                     messages: [],
                     createdAt: new Date(conversation.createdAt),
@@ -68,7 +68,7 @@ export class ChatService {
         return this.api.get<ConversationDto[]>(this.endpoints.conversations).pipe(
             tap(conversations => {
                 const mapped: Conversation[] = conversations.map(c => ({
-                    id: c.id,
+                    id: c.conversationId,
                     title: c.title,
                     messages: [],
                     createdAt: new Date(c.createdAt),

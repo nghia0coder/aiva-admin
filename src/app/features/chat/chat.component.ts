@@ -1,7 +1,7 @@
 import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import {
   ChatMessage,
   Conversation,
@@ -108,7 +108,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (conversation) => {
-          const newConv = this.conversations.find(c => c.id === conversation.id);
+          const newConv = this.conversations.find(c => c.id === conversation.conversationId);
           if (newConv) {
             this.currentConversation = newConv;
           }
@@ -174,13 +174,19 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     // Create conversation if none exists
     if (!this.currentConversation) {
       try {
-        const conversation = await this.chatService.createConversation(
-          messageContent.substring(0, 40)
-        ).toPromise();
+        const conversationDto = await firstValueFrom(
+          this.chatService.createConversation(messageContent.substring(0, 40))
+        );
 
-        const newConv = this.conversations.find(c => c.id === conversation?.id);
-        if (newConv) {
-          this.currentConversation = newConv;
+        if (conversationDto) {
+          // Use the returned DTO directly instead of finding from array
+          this.currentConversation = {
+            id: conversationDto.conversationId,
+            title: conversationDto.title,
+            messages: [],
+            createdAt: new Date(conversationDto.createdAt),
+            updatedAt: new Date(conversationDto.updatedAt)
+          };
         }
       } catch (error) {
         this.errorMessage = 'Failed to create conversation';
@@ -233,9 +239,10 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: StreamChatResponse) => {
-          // Append streamed content
-          assistantMessage.content += response.content;
-          this.shouldScrollToBottom = true;
+          if (response.content) {
+            assistantMessage.content += response.content;
+            this.shouldScrollToBottom = true;
+          }
         },
         error: (error) => {
           console.error('Stream error:', error);

@@ -17,7 +17,7 @@ export interface StreamChatResponse {
 }
 
 export interface ConversationDto {
-    id: string;
+    conversationId: string;
     title: string;
     createdAt: string;
     updatedAt: string;

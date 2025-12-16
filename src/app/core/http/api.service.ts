@@ -101,7 +101,7 @@ export class ApiService {
                                     const data = JSON.parse(dataMatch[1]);
 
                                     // Check for completion signal
-                                    if (data.isComplete || data.event === 'done') {
+                                    if (data.isComplete || data.complete || data.event === 'done') {
                                         observer.complete();
                                         return;
                                     }
