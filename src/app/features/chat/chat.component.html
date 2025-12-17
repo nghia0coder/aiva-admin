@@ -211,17 +211,26 @@
           </div>
           }
 
-          <div class="message-content">
+          <div
+            class="message-content"
+            [class.streaming-content]="message.isStreaming"
+          >
             @if (message.role === 'assistant') {
             <span class="message-sender">AIVA</span>
             }
             <div
               class="message-text"
-              [innerHTML]="message.content | slice : 0 : 10000"
+              [class.streaming-text]="message.isStreaming"
+              [innerHTML]="message.content | markdown"
             ></div>
 
             @if (message.isStreaming) {
-            <span class="typing-cursor"></span>
+            <div class="streaming-indicator">
+              <span class="stream-cursor"></span>
+              <div class="stream-wave">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
             } @if (message.role === 'assistant' && !message.isStreaming) {
             <div class="message-actions">
               <button
@@ -266,15 +275,18 @@
         </div>
       </div>
       } @if (isLoading && messages[messages.length - 1]?.role === 'user') {
-      <div class="message-row">
+      <div class="message-row ai-thinking-row">
         <div class="message-container">
-          <div class="avatar ai-avatar">
+          <div class="avatar ai-avatar thinking-avatar">
+            <!-- Animated AI avatar with orbiting particles -->
+            <div class="avatar-glow"></div>
             <svg
               width="24"
               height="24"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
+              class="avatar-icon"
             >
               <path
                 d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z"
@@ -299,13 +311,36 @@
                 </linearGradient>
               </defs>
             </svg>
+            <!-- Orbiting particles -->
+            <div class="orbit-ring">
+              <div class="orbit-particle"></div>
+              <div class="orbit-particle"></div>
+              <div class="orbit-particle"></div>
+            </div>
           </div>
-          <div class="message-content">
+          <div class="message-content thinking-content">
             <span class="message-sender">AIVA</span>
-            <div class="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
+
+            <!-- Neural network thinking animation -->
+            <div class="thinking-animation">
+              <div class="neural-waves">
+                <div class="wave"></div>
+                <div class="wave"></div>
+                <div class="wave"></div>
+              </div>
+              <div class="thinking-text">
+                <span class="thinking-status">{{ thinkingStatus }}</span>
+                <span class="thinking-dots">
+                  <span>.</span><span>.</span><span>.</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Skeleton shimmer placeholders -->
+            <div class="skeleton-content">
+              <div class="skeleton-line long"></div>
+              <div class="skeleton-line medium"></div>
+              <div class="skeleton-line short"></div>
             </div>
           </div>
         </div>

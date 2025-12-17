@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { InteractionStatus } from '@azure/msal-browser';
@@ -8,7 +8,7 @@ import { filter } from 'rxjs/operators';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })

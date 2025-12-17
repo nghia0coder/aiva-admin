@@ -9,11 +9,12 @@ import {
   StreamChatResponse
 } from '@/models/chat.models';
 import { ChatService } from '@/services/chat.service';
+import { MarkdownPipe } from '@/shared/pipes/markdown.pipe';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MarkdownPipe],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
@@ -30,6 +31,15 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   isSidebarCollapsed = false;
   currentModel = 'AIVA Pro';
   errorMessage = '';
+  thinkingStatus = 'Thinking';
+
+  private thinkingStages = [
+    'Analyzing your question',
+    'Processing context',
+    'Generating response',
+    'Thinking'
+  ];
+  private thinkingInterval: any = null;
 
   conversations: Conversation[] = [];
   currentConversation: Conversation | null = null;
@@ -79,6 +89,25 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     this.cancelStream();
+    this.stopThinkingAnimation();
+  }
+
+  private startThinkingAnimation(): void {
+    let stageIndex = 0;
+    this.thinkingStatus = this.thinkingStages[stageIndex];
+
+    this.thinkingInterval = setInterval(() => {
+      stageIndex = (stageIndex + 1) % this.thinkingStages.length;
+      this.thinkingStatus = this.thinkingStages[stageIndex];
+    }, 2000);
+  }
+
+  private stopThinkingAnimation(): void {
+    if (this.thinkingInterval) {
+      clearInterval(this.thinkingInterval);
+      this.thinkingInterval = null;
+    }
+    this.thinkingStatus = 'Thinking';
   }
 
   get hasMessages(): boolean {
@@ -223,6 +252,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.currentConversation!.messages.push(assistantMessage);
     this.isLoading = true;
+    this.startThinkingAnimation();
 
     // Stream the response
     this.streamResponse(this.currentConversation!.id, messageContent, assistantMessage);
@@ -240,17 +270,21 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
       .subscribe({
         next: (response: StreamChatResponse) => {
           if (response.content) {
+            // Stop thinking animation on first chunk received
+            this.stopThinkingAnimation();
             assistantMessage.content += response.content;
             this.shouldScrollToBottom = true;
           }
         },
         error: (error) => {
           console.error('Stream error:', error);
+          this.stopThinkingAnimation();
           assistantMessage.isStreaming = false;
           assistantMessage.error = error.message || 'Failed to get response';
           this.isLoading = false;
         },
         complete: () => {
+          this.stopThinkingAnimation();
           assistantMessage.isStreaming = false;
           this.isLoading = false;
           this.chatService.updateConversationLocally(this.currentConversation!);
@@ -267,6 +301,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   stopGeneration(): void {
     this.cancelStream();
+    this.stopThinkingAnimation();
     this.isLoading = false;
 
     // Mark the last assistant message as not streaming
@@ -304,6 +339,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
         this.currentConversation.messages.push(newAssistantMessage);
         this.isLoading = true;
+        this.startThinkingAnimation();
 
         // Stream new response
         this.streamResponse(
