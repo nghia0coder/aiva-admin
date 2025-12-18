@@ -48,7 +48,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.isLoadingProfile = true;
     this.profileError = null;
 
-    this.http.get<UserProfile>(environment.apiConfig.uri)
+    this.http.get<UserProfile>(environment.graphConfig.uri)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (profile) => {

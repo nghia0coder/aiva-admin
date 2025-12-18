@@ -91,7 +91,7 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
 
-  protectedResourceMap.set(environment.apiConfig.uri, environment.apiConfig.scopes);
+  protectedResourceMap.set(environment.apiConfig.baseUrl, environment.apiConfig.scopes);
   protectedResourceMap.set('https://graph.microsoft.com/v1.0/me', ['user.read']);
 
   return {
