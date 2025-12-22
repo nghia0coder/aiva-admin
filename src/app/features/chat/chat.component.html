@@ -221,12 +221,12 @@
             <div
               class="message-text"
               [class.streaming-text]="message.isStreaming"
+              [class.has-content]="message.content.length > 0"
               [innerHTML]="message.content | markdown"
             ></div>
 
-            @if (message.isStreaming) {
+            @if (message.isStreaming && message.content.length > 0) {
             <div class="streaming-indicator">
-              <span class="stream-cursor"></span>
               <div class="stream-wave">
                 <span></span><span></span><span></span><span></span>
               </div>

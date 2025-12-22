@@ -74,6 +74,14 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   private shouldScrollToBottom = false;
   private currentStreamSubscription: any = null;
 
+  // Text streaming buffer system for smooth animation
+  private textBuffer = '';
+  private displayedText = '';
+  private typewriterInterval: any = null;
+  private readonly TYPING_SPEED_MS = 15; // Milliseconds per character (lower = faster)
+  private readonly CHARS_PER_TICK = 2; // Characters to reveal per tick
+  private currentAssistantMessage: ChatMessage | null = null;
+
   ngOnInit(): void {
     this.loadConversations();
   }
@@ -90,6 +98,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.destroy$.complete();
     this.cancelStream();
     this.stopThinkingAnimation();
+    this.stopTypewriter();
   }
 
   private startThinkingAnimation(): void {
@@ -265,6 +274,12 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   ): void {
     this.cancelStream(); // Cancel any existing stream
 
+    // Reset buffer system
+    this.textBuffer = '';
+    this.displayedText = '';
+    this.currentAssistantMessage = assistantMessage;
+    this.startTypewriter();
+
     this.currentStreamSubscription = this.chatService.streamChat(conversationId, message)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -272,24 +287,87 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
           if (response.content) {
             // Stop thinking animation on first chunk received
             this.stopThinkingAnimation();
-            assistantMessage.content += response.content;
-            this.shouldScrollToBottom = true;
+            // Add to buffer instead of directly to content
+            this.textBuffer += response.content;
           }
         },
         error: (error) => {
           console.error('Stream error:', error);
           this.stopThinkingAnimation();
+          // Flush remaining buffer on error
+          this.flushBuffer(assistantMessage);
           assistantMessage.isStreaming = false;
           assistantMessage.error = error.message || 'Failed to get response';
           this.isLoading = false;
         },
         complete: () => {
           this.stopThinkingAnimation();
-          assistantMessage.isStreaming = false;
-          this.isLoading = false;
-          this.chatService.updateConversationLocally(this.currentConversation!);
+          // Wait for buffer to finish, then complete
+          this.finishStreaming(assistantMessage);
         }
       });
+  }
+
+  private startTypewriter(): void {
+    if (this.typewriterInterval) return;
+
+    this.typewriterInterval = setInterval(() => {
+      if (this.textBuffer.length > this.displayedText.length) {
+        // Calculate how many chars to add this tick
+        const remainingChars = this.textBuffer.length - this.displayedText.length;
+        const charsToAdd = Math.min(this.CHARS_PER_TICK, remainingChars);
+
+        // Get next characters from buffer
+        const nextChars = this.textBuffer.substring(
+          this.displayedText.length,
+          this.displayedText.length + charsToAdd
+        );
+
+        this.displayedText += nextChars;
+
+        // Update the message content
+        if (this.currentAssistantMessage) {
+          this.currentAssistantMessage.content = this.displayedText;
+          this.shouldScrollToBottom = true;
+        }
+      }
+    }, this.TYPING_SPEED_MS);
+  }
+
+  private stopTypewriter(): void {
+    if (this.typewriterInterval) {
+      clearInterval(this.typewriterInterval);
+      this.typewriterInterval = null;
+    }
+  }
+
+  private flushBuffer(assistantMessage: ChatMessage): void {
+    // Immediately display all buffered content
+    this.stopTypewriter();
+    assistantMessage.content = this.textBuffer;
+    this.displayedText = this.textBuffer;
+    this.textBuffer = '';
+    this.currentAssistantMessage = null;
+  }
+
+  private finishStreaming(assistantMessage: ChatMessage): void {
+    // Check if buffer is fully displayed
+    const checkComplete = () => {
+      if (this.displayedText.length >= this.textBuffer.length) {
+        this.stopTypewriter();
+        assistantMessage.content = this.textBuffer;
+        assistantMessage.isStreaming = false;
+        this.isLoading = false;
+        this.textBuffer = '';
+        this.displayedText = '';
+        this.currentAssistantMessage = null;
+        this.chatService.updateConversationLocally(this.currentConversation!);
+      } else {
+        // Check again after a short delay
+        setTimeout(checkComplete, 50);
+      }
+    };
+    checkComplete();
   }
 
   private cancelStream(): void {
@@ -297,18 +375,29 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.currentStreamSubscription.unsubscribe();
       this.currentStreamSubscription = null;
     }
+    this.stopTypewriter();
   }
 
   stopGeneration(): void {
     this.cancelStream();
     this.stopThinkingAnimation();
+    this.stopTypewriter();
     this.isLoading = false;
 
-    // Mark the last assistant message as not streaming
+    // Mark the last assistant message as not streaming and flush buffer
     const lastMessage = this.currentConversation?.messages[this.currentConversation.messages.length - 1];
     if (lastMessage && lastMessage.role === 'assistant') {
+      // Keep whatever was displayed so far
+      if (this.textBuffer) {
+        lastMessage.content = this.displayedText || this.textBuffer;
+      }
       lastMessage.isStreaming = false;
     }
+
+    // Reset buffer
+    this.textBuffer = '';
+    this.displayedText = '';
+    this.currentAssistantMessage = null;
   }
 
   copyMessage(message: ChatMessage): void {
@@ -319,6 +408,12 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   regenerateResponse(message: ChatMessage): void {
     if (!this.currentConversation || this.isLoading) return;
+
+    // Reset any existing buffer
+    this.stopTypewriter();
+    this.textBuffer = '';
+    this.displayedText = '';
+    this.currentAssistantMessage = null;
 
     const messageIndex = this.currentConversation.messages.findIndex(m => m.id === message.id);
     if (messageIndex > -1) {
@@ -375,7 +470,11 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   private scrollToBottom(): void {
     if (this.messagesContainer) {
       const element = this.messagesContainer.nativeElement;
-      element.scrollTop = element.scrollHeight;
+      // Use smooth scrolling for better UX during streaming
+      element.scrollTo({
+        top: element.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }
 }

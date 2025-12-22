@@ -339,6 +339,10 @@ $bg-surface: #ffffff;
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem 0;
+  scroll-behavior: smooth;
+  
+  // Optimize for smooth rendering during streaming
+  will-change: scroll-position;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -361,6 +365,7 @@ $bg-surface: #ffffff;
 .message-row {
   padding: 1rem 1.5rem;
   animation: slideIn 0.3s ease;
+  transition: background-color 0.3s ease;
 
   &.user-message {
     .message-container {
@@ -375,6 +380,15 @@ $bg-surface: #ffffff;
       .message-text {
         color: white;
       }
+    }
+  }
+  
+  // Subtle highlight for messages that are actively streaming
+  &:has(.streaming-content) {
+    background-color: rgba(102, 126, 234, 0.02);
+    
+    .message-content {
+      animation: pulseSubtle 2s ease-in-out infinite;
     }
   }
 
@@ -414,6 +428,14 @@ $bg-surface: #ffffff;
   background: $bg-surface;
   border-radius: 4px 20px 20px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  
+  // Smooth transitions for streaming content
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+  
+  &.streaming-content {
+    // Subtle glow during streaming
+    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
 
   .message-sender {
     display: block;
@@ -428,6 +450,11 @@ $bg-surface: #ffffff;
     line-height: 1.7;
     color: $text-primary;
     word-break: break-word;
+    
+    // Smooth appearance transition
+    &.has-content {
+      animation: contentAppear 0.2s ease-out;
+    }
 
     // ============================================
     // MARKDOWN TYPOGRAPHY
@@ -1043,22 +1070,50 @@ $bg-surface: #ffffff;
 .streaming-content {
   position: relative;
   
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 30px;
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.9), transparent);
-    pointer-events: none;
-    opacity: 0;
-    animation: fadeInOut 0.5s ease forwards;
+  .message-text {
+    // Smooth text rendering
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 }
 
 .streaming-text {
-  animation: textReveal 0.3s ease-out;
+  // Smooth transition for content changes
+  transition: all 0.15s ease-out;
+  
+  // Subtle text shadow for better readability during streaming
+  text-shadow: 0 0 0 transparent;
+  
+  // Inner content should flow smoothly
+  * {
+    animation: smoothContentReveal 0.2s ease-out;
+  }
+  
+  // Last paragraph gets the typing cursor effect
+  p:last-of-type::after,
+  &:not(:has(p))::after {
+    content: '';
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: linear-gradient(180deg, #667eea, #764ba2);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    border-radius: 1px;
+    animation: typingCursor 0.6s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+  }
+  
+  // Code blocks should appear smoothly
+  .code-block {
+    animation: codeBlockReveal 0.3s ease-out;
+  }
+  
+  // Lists appear with stagger effect
+  ul li, ol li {
+    animation: listItemReveal 0.25s ease-out both;
+  }
 }
 
 // Stream Indicator (shown during active streaming)
@@ -1066,27 +1121,55 @@ $bg-surface: #ffffff;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
+  animation: fadeInSlide 0.3s ease-out;
+  
+  .stream-cursor {
+    display: none; // Hidden since we use CSS ::after cursor now
+  }
   
   .stream-wave {
     display: flex;
-    gap: 2px;
+    gap: 3px;
     align-items: center;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.05));
+    border-radius: 20px;
     
     span {
       width: 3px;
-      height: 12px;
       background: linear-gradient(180deg, #667eea, #764ba2);
       border-radius: 2px;
-      animation: streamWave 0.8s ease-in-out infinite;
-      opacity: 0.7;
+      animation: streamWaveSmooth 1.2s ease-in-out infinite;
       
-      &:nth-child(1) { animation-delay: 0s; height: 8px; }
-      &:nth-child(2) { animation-delay: 0.1s; height: 14px; }
-      &:nth-child(3) { animation-delay: 0.2s; height: 10px; }
-      &:nth-child(4) { animation-delay: 0.3s; height: 6px; }
+      &:nth-child(1) { 
+        height: 8px;
+        animation-delay: 0s; 
+      }
+      &:nth-child(2) { 
+        height: 14px;
+        animation-delay: 0.15s; 
+      }
+      &:nth-child(3) { 
+        height: 10px;
+        animation-delay: 0.3s; 
+      }
+      &:nth-child(4) { 
+        height: 6px;
+        animation-delay: 0.45s; 
+      }
     }
+  }
+  
+  // Optional streaming label
+  &::after {
+    font-size: 0.75rem;
+    color: $text-muted;
+    font-weight: 500;
+    opacity: 0.7;
+    animation: textFade 2s ease-in-out infinite;
   }
 }
 
@@ -1406,6 +1489,38 @@ $bg-surface: #ffffff;
   }
 }
 
+// Smoother stream wave with elastic feel
+@keyframes streamWaveSmooth {
+  0%, 100% {
+    transform: scaleY(0.4);
+    opacity: 0.4;
+  }
+  25% {
+    transform: scaleY(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  75% {
+    transform: scaleY(0.7);
+    opacity: 0.6;
+  }
+}
+
+// Fade in with slide
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 // Text reveal animation
 @keyframes textReveal {
   from {
@@ -1426,6 +1541,102 @@ $bg-surface: #ffffff;
   }
   100% {
     opacity: 0;
+  }
+}
+
+// ============================================
+// SMOOTH STREAMING TEXT ANIMATIONS
+// ============================================
+
+// Typing cursor with glow
+@keyframes typingCursor {
+  0%, 100% {
+    opacity: 1;
+    transform: scaleY(1);
+    box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scaleY(0.9);
+    box-shadow: 0 0 4px rgba(102, 126, 234, 0.2);
+  }
+}
+
+// Smooth content reveal for streaming chunks
+@keyframes smoothContentReveal {
+  from {
+    opacity: 0.6;
+    filter: blur(0.5px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+// Code block smooth appear
+@keyframes codeBlockReveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// List items stagger reveal
+@keyframes listItemReveal {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Character by character text flow
+@keyframes charReveal {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Smooth text glow pulse during streaming
+@keyframes textGlowPulse {
+  0%, 100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(102, 126, 234, 0.15);
+  }
+}
+
+// Content appear animation
+@keyframes contentAppear {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Subtle pulse for streaming messages
+@keyframes pulseSubtle {
+  0%, 100% {
+    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+  50% {
+    box-shadow: 0 2px 16px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 }
 
