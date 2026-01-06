@@ -5,6 +5,8 @@ import {
     StreamChatResponse,
     Conversation,
     ConversationDto,
+    CreateConversationResponseDto,
+    PaginatedConversationsResponse,
     MessageDto,
     CreateConversationRequest,
 } from '../models/chat.models';
@@ -25,6 +27,22 @@ export class ChatService {
     private conversationsSubject = new BehaviorSubject<Conversation[]>([]);
     conversations$ = this.conversationsSubject.asObservable();
 
+    // Pagination state
+    private paginationSubject = new BehaviorSubject<{
+        currentPage: number;
+        perPage: number;
+        totalCount: number;
+        totalPages: number;
+        hasMore: boolean;
+    }>({
+        currentPage: 1,
+        perPage: 10,
+        totalCount: 0,
+        totalPages: 0,
+        hasMore: false
+    });
+    pagination$ = this.paginationSubject.asObservable();
+
     /**
      * Stream chat response from AI
      */
@@ -40,21 +58,22 @@ export class ChatService {
     /**
      * Create a new conversation
      */
-    createConversation(title?: string, systemPrompt?: string): Observable<ConversationDto> {
+    createConversation(title?: string, systemPrompt?: string): Observable<CreateConversationResponseDto> {
         const request: CreateConversationRequest = { title, systemPrompt };
 
-        return this.api.post<CreateConversationRequest, ConversationDto>(
+        return this.api.post<CreateConversationRequest, CreateConversationResponseDto>(
             this.endpoints.conversations,
             request
         ).pipe(
             tap(conversation => {
                 const current = this.conversationsSubject.value;
+                const now = new Date();
                 const newConversation: Conversation = {
                     id: conversation.conversationId,
                     title: conversation.title,
                     messages: [],
-                    createdAt: new Date(conversation.createdAt),
-                    updatedAt: new Date(conversation.updatedAt)
+                    createdAt: now,
+                    updatedAt: now
                 };
                 this.conversationsSubject.next([newConversation, ...current]);
             })
@@ -62,25 +81,75 @@ export class ChatService {
     }
 
     /**
-     * Get all conversations
+     * Get conversations with pagination
+     * @param page Page number (default: 1)
+     * @param perPage Items per page (default: 10)
+     * @param append If true, append to existing conversations instead of replacing
      */
-    getConversations(): Observable<ConversationDto[]> {
-        return this.api.get<ConversationDto[]>(this.endpoints.conversations).pipe(
-            tap(conversations => {
-                const mapped: Conversation[] = conversations.map(c => ({
-                    id: c.conversationId,
+    getConversations(page: number = 1, perPage: number = 10, append: boolean = false): Observable<PaginatedConversationsResponse> {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            perPage: perPage.toString()
+        });
+        const url = `${this.endpoints.conversations}?${params.toString()}`;
+
+        return this.api.get<PaginatedConversationsResponse>(url).pipe(
+            tap(response => {
+                const mapped: Conversation[] = response.items.map(c => ({
+                    id: c.id,
                     title: c.title,
                     messages: [],
                     createdAt: new Date(c.createdAt),
-                    updatedAt: new Date(c.updatedAt)
+                    updatedAt: new Date(c.lastMessageAt || c.createdAt)
                 }));
-                this.conversationsSubject.next(mapped);
+
+                if (append) {
+                    const current = this.conversationsSubject.value;
+                    // Avoid duplicates
+                    const existingIds = new Set(current.map(c => c.id));
+                    const newConversations = mapped.filter(c => !existingIds.has(c.id));
+                    this.conversationsSubject.next([...current, ...newConversations]);
+                } else {
+                    this.conversationsSubject.next(mapped);
+                }
+
+                // Update pagination state
+                this.paginationSubject.next({
+                    currentPage: response.page,
+                    perPage: response.perPage,
+                    totalCount: response.totalCount,
+                    totalPages: response.totalPages,
+                    hasMore: response.page < response.totalPages
+                });
             }),
             catchError(error => {
                 console.error('Failed to load conversations:', error);
-                return of([]);
+                return of({
+                    items: [],
+                    page: 1,
+                    perPage: 10,
+                    totalCount: 0,
+                    totalPages: 0
+                });
             })
         );
+    }
+
+    /**
+     * Load more conversations (next page)
+     */
+    loadMoreConversations(): Observable<PaginatedConversationsResponse> {
+        const currentPagination = this.paginationSubject.value;
+        if (!currentPagination.hasMore) {
+            return of({
+                items: [],
+                page: currentPagination.currentPage,
+                perPage: currentPagination.perPage,
+                totalCount: currentPagination.totalCount,
+                totalPages: currentPagination.totalPages
+            });
+        }
+        return this.getConversations(currentPagination.currentPage + 1, currentPagination.perPage, true);
     }
 
     /**

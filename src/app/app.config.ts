@@ -47,18 +47,20 @@ export function MSALInstanceFactory(): IPublicClientApplication {
           if (containsPii) {
             return;
           }
+
+          if (!environment.production) {
+            return;
+          }
+
           switch (level) {
             case LogLevel.Error:
-              console.error(message);
-              return;
-            case LogLevel.Info:
-              console.info(message);
-              return;
-            case LogLevel.Verbose:
-              console.debug(message);
+              console.error('[MSAL]', message);
               return;
             case LogLevel.Warning:
-              console.warn(message);
+              console.warn('[MSAL]', message);
+              return;
+            case LogLevel.Info:
+            case LogLevel.Verbose:
               return;
           }
         },
@@ -87,14 +89,32 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
  * MSAL Angular will automatically retrieve tokens for resources 
  * added to protectedResourceMap. For more info, visit:
  * https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-angular/docs/v2-docs/initialization.md#get-tokens-for-web-api-calls
+ * 
+ * The interceptor will automatically:
+ * - Attach access tokens to requests matching protectedResourceMap URLs
+ * - Refresh tokens silently when they expire
+ * - Handle token acquisition errors gracefully
  */
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
 
-  protectedResourceMap.set(environment.apiConfig.baseUrl, environment.apiConfig.scopes);
+  // Map API base URL with all its sub-paths to required scopes
+  // MSAL will match any URL that starts with this base URL
+  const apiBaseUrl = environment.apiConfig.baseUrl;
+  protectedResourceMap.set(apiBaseUrl, environment.apiConfig.scopes);
+
+  // Also add base URL with trailing slash to ensure all paths are covered
+  if (!apiBaseUrl.endsWith('/')) {
+    protectedResourceMap.set(`${apiBaseUrl}/`, environment.apiConfig.scopes);
+  }
+
+  // Map Microsoft Graph API
   protectedResourceMap.set('https://graph.microsoft.com/v1.0/me', ['user.read']);
+  protectedResourceMap.set('https://graph.microsoft.com', ['user.read']);
 
   return {
+    // Use Redirect for silent token refresh (best practice for production)
+    // This will automatically redirect to login if token refresh fails
     interactionType: InteractionType.Redirect,
     protectedResourceMap
   };

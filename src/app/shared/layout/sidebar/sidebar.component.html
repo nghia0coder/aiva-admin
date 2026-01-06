@@ -1,67 +1,97 @@
 <aside class="sidebar" [class.collapsed]="isCollapsed">
   <div class="sidebar-header">
     <div class="navbar-brand">
-      <svg class="brand-icon" width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="14" height="14" fill="#f25022"/>
-        <rect x="16" y="0" width="14" height="14" fill="#7fba00"/>
-        <rect x="0" y="16" width="14" height="14" fill="#00a4ef"/>
-        <rect x="16" y="16" width="14" height="14" fill="#ffb900"/>
+      <svg
+        class="brand-icon"
+        width="32"
+        height="32"
+        viewBox="0 0 32 32"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect x="0" y="0" width="14" height="14" fill="#f25022" />
+        <rect x="16" y="0" width="14" height="14" fill="#7fba00" />
+        <rect x="0" y="16" width="14" height="14" fill="#00a4ef" />
+        <rect x="16" y="16" width="14" height="14" fill="#ffb900" />
       </svg>
       @if (!isCollapsed) {
-        <span class="brand-text">AIVA Admin</span>
+      <span class="brand-text">AIVA Admin</span>
       }
     </div>
-    <button class="toggle-button" (click)="toggleSidebar()" [title]="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 10H17M3 5H17M3 15H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <button
+      class="toggle-button"
+      (click)="toggleSidebar()"
+      [title]="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M3 10H17M3 5H17M3 15H17"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </button>
   </div>
 
   <nav class="sidebar-nav">
     @for (item of navItems; track item.id) {
-      <a
-        [routerLink]="item.route"
-        routerLinkActive="active"
-        class="nav-item"
-        [class.active]="isActiveRoute(item.route)"
-        [title]="isCollapsed ? item.label : ''"
-      >
-        <div class="nav-icon">
-          @switch (item.icon) {
-            @case ('dashboard') {
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
-              </svg>
-            }
-            @case ('chat') {
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/>
-              </svg>
-            }
-            @case ('storage') {
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" fill="currentColor"/>
-              </svg>
-            }
-          }
-        </div>
-        @if (!isCollapsed) {
-          <span class="nav-label">{{ item.label }}</span>
-        }
-        @if (item.badge && !isCollapsed) {
-          <span class="nav-badge">{{ item.badge }}</span>
-        }
-      </a>
+    <a
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      class="nav-item"
+      [class.active]="isActiveRoute(item.route)"
+      [title]="isCollapsed ? item.label : ''"
+    >
+      <div class="nav-icon">
+        @switch (item.icon) { @case ('dashboard') {
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+            fill="currentColor"
+          />
+        </svg>
+        } @case ('storage') {
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"
+            fill="currentColor"
+          />
+        </svg>
+        } }
+      </div>
+      @if (!isCollapsed) {
+      <span class="nav-label">{{ item.label }}</span>
+      } @if (item.badge && !isCollapsed) {
+      <span class="nav-badge">{{ item.badge }}</span>
+      }
+    </a>
     }
   </nav>
 
   <div class="sidebar-footer">
     <div class="sidebar-version">
       @if (!isCollapsed) {
-        <span class="version-text">v1.0.0</span>
+      <span class="version-text">v1.0.0</span>
       }
     </div>
   </div>
 </aside>
-

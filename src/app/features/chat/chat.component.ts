@@ -21,6 +21,7 @@ import { MarkdownPipe } from '@/shared/pipes/markdown.pipe';
 export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   @ViewChild('messageInput') private messageInput!: ElementRef;
+  @ViewChild('conversationsList') private conversationsList!: ElementRef;
 
   private readonly chatService = inject(ChatService);
   private readonly destroy$ = new Subject<void>();
@@ -43,6 +44,14 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   conversations: Conversation[] = [];
   currentConversation: Conversation | null = null;
+  isLoadingConversations = false;
+  pagination = {
+    currentPage: 1,
+    perPage: 10,
+    totalCount: 0,
+    totalPages: 0,
+    hasMore: false
+  };
 
   suggestedPrompts: SuggestedPrompt[] = [
     {
@@ -83,7 +92,10 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   private currentAssistantMessage: ChatMessage | null = null;
 
   ngOnInit(): void {
+    this.updateConversations();
+    this.updatePagination();
     this.loadConversations();
+    this.setupInfiniteScroll();
   }
 
   ngAfterViewChecked(): void {
@@ -128,17 +140,95 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private loadConversations(): void {
-    this.chatService.getConversations()
+    this.isLoadingConversations = true;
+    this.chatService.getConversations(1, 10, false)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.chatService.conversations$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(conversations => {
-              this.conversations = conversations;
-            });
+          this.isLoadingConversations = false;
+        },
+        error: () => {
+          this.isLoadingConversations = false;
         }
       });
+  }
+
+  private updateConversations(): void {
+    this.chatService.conversations$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(conversations => {
+        this.conversations = conversations;
+      });
+  }
+
+  private updatePagination(): void {
+    this.chatService.pagination$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(pagination => {
+        this.pagination = pagination;
+      });
+  }
+
+  loadMoreConversations(): void {
+    if (this.isLoadingConversations || !this.pagination.hasMore) return;
+
+    this.isLoadingConversations = true;
+    this.chatService.loadMoreConversations()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isLoadingConversations = false;
+        },
+        error: () => {
+          this.isLoadingConversations = false;
+        }
+      });
+  }
+
+  private setupInfiniteScroll(): void {
+    // Use IntersectionObserver for better performance
+    if (typeof IntersectionObserver !== 'undefined') {
+      // Observer will be set up after view init
+      setTimeout(() => {
+        if (this.conversationsList) {
+          const listElement = this.conversationsList.nativeElement;
+
+          // Create a sentinel element for intersection observation
+          // We'll observe when user scrolls near the bottom
+          const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting && !this.isLoadingConversations && this.pagination.hasMore) {
+                this.loadMoreConversations();
+              }
+            });
+          }, {
+            root: listElement,
+            rootMargin: '200px', // Load more when 200px from bottom
+            threshold: 0.1
+          });
+
+          // Observe scroll behavior on the list itself
+          // We'll check scroll position manually for better control
+          listElement.addEventListener('scroll', () => {
+            this.handleScroll(listElement);
+          });
+        }
+      }, 100);
+    }
+  }
+
+  private handleScroll(element: HTMLElement): void {
+    if (this.isLoadingConversations || !this.pagination.hasMore) return;
+
+    const scrollTop = element.scrollTop;
+    const scrollHeight = element.scrollHeight;
+    const clientHeight = element.clientHeight;
+
+    // Load more when user scrolls within 300px of the bottom
+    const threshold = 300;
+    if (scrollHeight - scrollTop - clientHeight < threshold) {
+      this.loadMoreConversations();
+    }
   }
 
   startNewChat(): void {
@@ -149,6 +239,16 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
           const newConv = this.conversations.find(c => c.id === conversation.conversationId);
           if (newConv) {
             this.currentConversation = newConv;
+          } else {
+            // If not found in list yet, create it directly
+            const now = new Date();
+            this.currentConversation = {
+              id: conversation.conversationId,
+              title: conversation.title,
+              messages: [],
+              createdAt: now,
+              updatedAt: now
+            };
           }
         },
         error: (error) => {
@@ -218,12 +318,13 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
         if (conversationDto) {
           // Use the returned DTO directly instead of finding from array
+          const now = new Date();
           this.currentConversation = {
             id: conversationDto.conversationId,
             title: conversationDto.title,
             messages: [],
-            createdAt: new Date(conversationDto.createdAt),
-            updatedAt: new Date(conversationDto.updatedAt)
+            createdAt: now,
+            updatedAt: now
           };
         }
       } catch (error) {

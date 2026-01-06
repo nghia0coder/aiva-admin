@@ -28,12 +28,6 @@ export class SidebarComponent {
       route: '/dashboard'
     },
     {
-      id: 'chat',
-      label: 'Chat',
-      icon: 'chat',
-      route: '/chat'
-    },
-    {
       id: 'storage',
       label: 'Storage',
       icon: 'storage',

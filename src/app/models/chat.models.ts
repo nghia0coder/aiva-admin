@@ -17,10 +17,24 @@ export interface StreamChatResponse {
 }
 
 export interface ConversationDto {
-    conversationId: string;
+    id: string;
     title: string;
     createdAt: string;
-    updatedAt: string;
+    lastMessageAt?: string;
+    messageCount?: number;
+}
+
+export interface CreateConversationResponseDto {
+    conversationId: string;
+    title: string;
+}
+
+export interface PaginatedConversationsResponse {
+    items: ConversationDto[];
+    page: number;
+    perPage: number;
+    totalCount: number;
+    totalPages: number;
 }
 
 export interface MessageDto {
