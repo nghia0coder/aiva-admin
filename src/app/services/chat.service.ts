@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, BehaviorSubject, catchError, of, tap } from 'rxjs';
 import {
     StreamChatRequest,
@@ -9,12 +10,16 @@ import {
     PaginatedConversationsResponse,
     MessageDto,
     CreateConversationRequest,
+    TitleUpdatedMessage,
 } from '../models/chat.models';
 import { ApiService } from '../core/http/api.service';
+import { SignalRService } from './signalr.service';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
     private readonly api = inject(ApiService);
+    private readonly signalrService = inject(SignalRService);
+    private readonly destroyRef = inject(DestroyRef);
 
     // API endpoints
     private readonly endpoints = {
@@ -42,6 +47,11 @@ export class ChatService {
         hasMore: false
     });
     pagination$ = this.paginationSubject.asObservable();
+
+    constructor() {
+        // Subscribe to real-time title updates from SignalR
+        this.subscribeToTitleUpdates();
+    }
 
     /**
      * Stream chat response from AI
@@ -188,5 +198,43 @@ export class ChatService {
      */
     generateMessageId(): string {
         return crypto.randomUUID();
+    }
+
+    /**
+     * Subscribe to real-time title updates from SignalR
+     */
+    private subscribeToTitleUpdates(): void {
+        this.signalrService.titleUpdated$
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (message: TitleUpdatedMessage) => {
+                    console.log('Received title update:', message);
+                    this.updateConversationTitle(message.conversationId, message.newTitle);
+                },
+                error: (error) => {
+                    console.error('Error receiving title update:', error);
+                }
+            });
+    }
+
+    /**
+     * Update conversation title in local state
+     */
+    updateConversationTitle(conversationId: string, newTitle: string): void {
+        const current = this.conversationsSubject.value;
+        const index = current.findIndex(c => c.id === conversationId);
+
+        if (index > -1) {
+            // Update the conversation with new title
+            current[index] = {
+                ...current[index],
+                title: newTitle,
+                updatedAt: new Date()
+            };
+            this.conversationsSubject.next([...current]);
+            console.log(`Updated conversation ${conversationId} title to: ${newTitle}`);
+        } else {
+            console.warn(`Conversation ${conversationId} not found in local state`);
+        }
     }
 }

@@ -69,3 +69,17 @@ export interface SuggestedPrompt {
     description: string;
     prompt: string;
 }
+
+// SignalR models
+export interface TitleUpdatedMessage {
+    conversationId: string;
+    newTitle: string;
+    updatedAt: string; // ISO 8601 date string from backend
+}
+
+export enum SignalRConnectionState {
+    Disconnected = 'Disconnected',
+    Connecting = 'Connecting',
+    Connected = 'Connected',
+    Reconnecting = 'Reconnecting'
+}
