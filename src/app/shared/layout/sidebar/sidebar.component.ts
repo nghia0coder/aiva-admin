@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-
 import { RouterModule, Router } from '@angular/router';
 
 interface NavItem {
@@ -45,4 +44,3 @@ export class SidebarComponent {
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 }
-

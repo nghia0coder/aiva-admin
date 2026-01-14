@@ -1,11 +1,9 @@
-import { Injectable, inject, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DestroyRef, Injectable, inject } from '@angular/core';
 import { Observable, BehaviorSubject, catchError, of, tap } from 'rxjs';
 import {
     StreamChatRequest,
     StreamChatResponse,
     Conversation,
-    ConversationDto,
     CreateConversationResponseDto,
     PaginatedConversationsResponse,
     MessageDto,
@@ -14,6 +12,7 @@ import {
 } from '../models/chat.models';
 import { ApiService } from '../core/http/api.service';
 import { SignalRService } from './signalr.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
@@ -47,6 +46,9 @@ export class ChatService {
         hasMore: false
     });
     pagination$ = this.paginationSubject.asObservable();
+
+    // Track if conversations have been loaded
+    private conversationsLoaded = false;
 
     constructor() {
         // Subscribe to real-time title updates from SignalR
@@ -95,8 +97,20 @@ export class ChatService {
      * @param page Page number (default: 1)
      * @param perPage Items per page (default: 10)
      * @param append If true, append to existing conversations instead of replacing
+     * @param forceRefresh If true, fetch even if conversations are already loaded
      */
-    getConversations(page: number = 1, perPage: number = 10, append: boolean = false): Observable<PaginatedConversationsResponse> {
+    getConversations(page: number = 1, perPage: number = 10, append: boolean = false, forceRefresh: boolean = false): Observable<PaginatedConversationsResponse> {
+        // If conversations are already loaded and we're not forcing a refresh or appending, return cached data
+        if (this.conversationsLoaded && !forceRefresh && !append && page === 1) {
+            return of({
+                items: [],
+                page: this.paginationSubject.value.currentPage,
+                perPage: this.paginationSubject.value.perPage,
+                totalCount: this.paginationSubject.value.totalCount,
+                totalPages: this.paginationSubject.value.totalPages
+            });
+        }
+
         const params = new URLSearchParams({
             page: page.toString(),
             perPage: perPage.toString()
@@ -131,6 +145,9 @@ export class ChatService {
                     totalPages: response.totalPages,
                     hasMore: response.page < response.totalPages
                 });
+
+                // Mark conversations as loaded
+                this.conversationsLoaded = true;
             }),
             catchError(error => {
                 console.error('Failed to load conversations:', error);
@@ -177,6 +194,12 @@ export class ChatService {
             tap(() => {
                 const current = this.conversationsSubject.value;
                 this.conversationsSubject.next(current.filter(c => c.id !== conversationId));
+                // Update pagination count
+                const pagination = this.paginationSubject.value;
+                this.paginationSubject.next({
+                    ...pagination,
+                    totalCount: Math.max(0, pagination.totalCount - 1)
+                });
             })
         );
     }
@@ -194,10 +217,33 @@ export class ChatService {
     }
 
     /**
-     * Generate a unique message ID
+     * Refresh conversations from the server
+     * Use this when you need to ensure you have the latest data
      */
-    generateMessageId(): string {
-        return crypto.randomUUID();
+    refreshConversations(): Observable<PaginatedConversationsResponse> {
+        return this.getConversations(1, this.paginationSubject.value.perPage, false, true);
+    }
+
+    /**
+     * Check if conversations are already loaded
+     */
+    isConversationsLoaded(): boolean {
+        return this.conversationsLoaded;
+    }
+
+    /**
+     * Reset the loaded state (useful for logout or manual refresh)
+     */
+    resetConversationsCache(): void {
+        this.conversationsLoaded = false;
+        this.conversationsSubject.next([]);
+        this.paginationSubject.next({
+            currentPage: 1,
+            perPage: 10,
+            totalCount: 0,
+            totalPages: 0,
+            hasMore: false
+        });
     }
 
     /**
@@ -236,5 +282,12 @@ export class ChatService {
         } else {
             console.warn(`Conversation ${conversationId} not found in local state`);
         }
+    }
+
+    /**
+     * Generate a unique message ID
+     */
+    generateMessageId(): string {
+        return crypto.randomUUID();
     }
 }

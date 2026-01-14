@@ -3,11 +3,12 @@ import { Component, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular
 import { RouterModule } from '@angular/router';
 import { HeaderComponent } from '../header/header.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
+import { ChatHistorySidebarComponent } from '../chat-history-sidebar/chat-history-sidebar.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [RouterModule, HeaderComponent, SidebarComponent],
+  imports: [RouterModule, HeaderComponent, SidebarComponent, ChatHistorySidebarComponent],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.scss']
 })

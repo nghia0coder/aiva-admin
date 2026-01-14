@@ -140,17 +140,21 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private loadConversations(): void {
-    this.isLoadingConversations = true;
-    this.chatService.getConversations(1, 10, false)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.isLoadingConversations = false;
-        },
-        error: () => {
-          this.isLoadingConversations = false;
-        }
-      });
+    // Only load if conversations haven't been loaded yet
+    // This prevents redundant API calls since the global sidebar already loads them
+    if (!this.chatService.isConversationsLoaded()) {
+      this.isLoadingConversations = true;
+      this.chatService.getConversations(1, 10, false)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.isLoadingConversations = false;
+          },
+          error: () => {
+            this.isLoadingConversations = false;
+          }
+        });
+    }
   }
 
   private updateConversations(): void {

@@ -4,6 +4,7 @@ import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Observable, Subject, filter } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
 import { SignalRConnectionState, TitleUpdatedMessage } from '../models/chat.models';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SignalRService {
@@ -89,7 +90,7 @@ export class SignalRService {
             }
 
             const result = await this.msalService.instance.acquireTokenSilent({
-                scopes: ['api://aiva-admin/.default'], // Adjust scope as needed
+                scopes: environment.apiConfig.scopes,
                 account: account
             });
 
