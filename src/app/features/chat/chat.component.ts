@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import {
   ChatMessage,
@@ -24,6 +25,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('conversationsList') private conversationsList!: ElementRef;
 
   private readonly chatService = inject(ChatService);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroy$ = new Subject<void>();
   private readonly DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant for E-Commerce websites. You are able to answer questions and help with tasks.';
 
@@ -96,6 +98,40 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.updatePagination();
     this.loadConversations();
     this.setupInfiniteScroll();
+
+    // Check for conversationId in query params
+    this.route.queryParams
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const conversationId = params['conversationId'];
+        if (conversationId) {
+          // Try to find in existing conversations first
+          const conversation = this.conversations.find(c => c.id === conversationId);
+          if (conversation) {
+            this.selectConversation(conversation);
+          } else {
+            // If not found (e.g. reload), we might need to fetch it or wait for conversations to load
+            // For now, let's look it up in the service's current value directly in case this.conversations isn't synced yet
+            // or we can rely on the updateConversations subscription to handle it eventually if we set a flag,
+            // but simpler is to just try to select it if it appears in the list later or just try to get messages if we have ID.
+
+            // A better approach if not found is to try to load it specifically or wait.
+            // But since we just created it in sidebar, it should be in the service state.
+
+            // Let's create a temporary conversation object if we have the ID, so we can send messages
+            // The full object will eventually update
+            this.currentConversation = {
+              id: conversationId,
+              title: 'Loading...',
+              messages: [],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            // And load its messages to be sure
+            this.selectConversation(this.currentConversation);
+          }
+        }
+      });
   }
 
   ngAfterViewChecked(): void {
@@ -317,7 +353,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     if (!this.currentConversation) {
       try {
         const conversationDto = await firstValueFrom(
-          this.chatService.createConversation(messageContent.substring(0, 40))
+          this.chatService.createConversation('New Conversation')
         );
 
         if (conversationDto) {
@@ -349,11 +385,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.currentConversation!.updatedAt = new Date();
     this.shouldScrollToBottom = true;
 
-    // Update conversation title if first message
-    if (this.currentConversation!.messages.length === 1) {
-      this.currentConversation!.title = messageContent.substring(0, 40) +
-        (messageContent.length > 40 ? '...' : '');
-    }
 
     // Create assistant message placeholder
     const assistantMessage: ChatMessage = {

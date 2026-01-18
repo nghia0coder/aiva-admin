@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ChatService } from '@/services/chat.service';
 import { Conversation } from '@/models/chat.models';
+import { TypingTextComponent } from '@/shared/components/typing-text/typing-text.component';
 
 @Component({
   selector: 'app-chat-history-sidebar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TypingTextComponent],
   templateUrl: './chat-history-sidebar.component.html',
   styleUrls: ['./chat-history-sidebar.component.scss']
 })
@@ -23,10 +24,17 @@ export class ChatHistorySidebarComponent implements OnInit {
   constructor(
     private router: Router,
     private chatService: ChatService
-  ) {}
+  ) { }
+
+  isLoading = false;
 
   ngOnInit(): void {
-    this.chatService.getConversations(1, 10, false).subscribe();
+    this.isLoading = true;
+    this.chatService.getConversations(1, 10, false)
+      .subscribe({
+        next: () => this.isLoading = false,
+        error: () => this.isLoading = false
+      });
   }
 
   createNewChat(): void {
