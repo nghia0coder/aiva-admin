@@ -9,6 +9,8 @@ import {
     MessageDto,
     CreateConversationRequest,
     TitleUpdatedMessage,
+    ConversationHistoryResponse,
+    PaginationInfo,
 } from '../models/chat.models';
 import { ApiService } from '../core/http/api.service';
 import { SignalRService } from './signalr.service';
@@ -180,10 +182,72 @@ export class ChatService {
     }
 
     /**
-     * Get messages for a conversation
+     * Get messages for a conversation with cursor-based pagination
+     * @param conversationId Conversation ID
+     * @param options Pagination options
      */
-    getMessages(conversationId: string): Observable<MessageDto[]> {
-        return this.api.get<MessageDto[]>(this.endpoints.messages(conversationId));
+    getMessages(
+        conversationId: string,
+        options?: {
+            limit?: number;
+            beforeMessageId?: string;
+            afterMessageId?: string;
+            aroundMessageId?: string;
+        }
+    ): Observable<ConversationHistoryResponse> {
+        let url = `${this.endpoints.conversations}/${conversationId}`;
+
+        if (options) {
+            const params = new URLSearchParams();
+
+            if (options.limit) {
+                params.append('limit', options.limit.toString());
+            }
+            if (options.beforeMessageId) {
+                params.append('beforeMessageId', options.beforeMessageId);
+            }
+            if (options.afterMessageId) {
+                params.append('afterMessageId', options.afterMessageId);
+            }
+            if (options.aroundMessageId) {
+                params.append('aroundMessageId', options.aroundMessageId);
+            }
+
+            const queryString = params.toString();
+            if (queryString) {
+                url += `?${queryString}`;
+            }
+        }
+
+        return this.api.get<ConversationHistoryResponse>(url);
+    }
+
+    /**
+     * Load latest messages for a conversation (initial load)
+     */
+    loadLatestMessages(conversationId: string, limit: number = 50): Observable<ConversationHistoryResponse> {
+        return this.getMessages(conversationId, { limit });
+    }
+
+    /**
+     * Load older messages (scroll up)
+     */
+    loadOlderMessages(conversationId: string, beforeMessageId: string, limit: number = 50): Observable<ConversationHistoryResponse> {
+        return this.getMessages(conversationId, { beforeMessageId, limit });
+    }
+
+    /**
+     * Load newer messages (scroll down)
+     */
+    loadNewerMessages(conversationId: string, afterMessageId: string, limit: number = 50): Observable<ConversationHistoryResponse> {
+        return this.getMessages(conversationId, { afterMessageId, limit });
+    }
+
+    /**
+     * Load messages around a specific message (deep linking)
+     */
+    loadMessagesAround(conversationId: string, aroundMessageId: string, limit: number = 100): Observable<ConversationHistoryResponse> {
+        return this.getMessages(conversationId, { aroundMessageId, limit });
     }
 
     /**

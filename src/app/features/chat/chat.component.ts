@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, OnDestroy, inject, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -7,27 +7,36 @@ import {
   ChatMessage,
   Conversation,
   SuggestedPrompt,
-  StreamChatResponse
+  StreamChatResponse,
+  MessageDto
 } from '@/models/chat.models';
 import { ChatService } from '@/services/chat.service';
+import { ChatScrollService } from '@/services/chat-scroll.service';
 import { MarkdownPipe } from '@/shared/pipes/markdown.pipe';
+import { ChatScrollDirective } from '@/shared/directives/chat-scroll.directive';
+import { NewMessagesIndicatorComponent } from '@/shared/components/new-messages-indicator/new-messages-indicator.component';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, MarkdownPipe],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MarkdownPipe,
+    ChatScrollDirective,
+    NewMessagesIndicatorComponent
+  ],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
-export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
+export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   @ViewChild('messageInput') private messageInput!: ElementRef;
-  @ViewChild('conversationsList') private conversationsList!: ElementRef;
 
   private readonly chatService = inject(ChatService);
+  private readonly scrollService = inject(ChatScrollService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroy$ = new Subject<void>();
-  private readonly DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant for E-Commerce websites. You are able to answer questions and help with tasks.';
 
   userInput = '';
   isLoading = false;
@@ -42,7 +51,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     'Generating response',
     'Thinking'
   ];
-  private thinkingInterval: any = null;
+  private thinkingInterval: ReturnType<typeof setInterval> | null = null;
 
   conversations: Conversation[] = [];
   currentConversation: Conversation | null = null;
@@ -82,13 +91,12 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   ];
 
-  private shouldScrollToBottom = false;
-  private currentStreamSubscription: any = null;
+  private currentStreamSubscription: { unsubscribe: () => void } | null = null;
 
   // Text streaming buffer system for smooth animation
   private textBuffer = '';
   private displayedText = '';
-  private typewriterInterval: any = null;
+  private typewriterInterval: ReturnType<typeof setInterval> | null = null;
   private readonly TYPING_SPEED_MS = 15; // Milliseconds per character (lower = faster)
   private readonly CHARS_PER_TICK = 2; // Characters to reveal per tick
   private currentAssistantMessage: ChatMessage | null = null;
@@ -97,7 +105,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.updateConversations();
     this.updatePagination();
     this.loadConversations();
-    this.setupInfiniteScroll();
 
     // Check for conversationId in query params
     this.route.queryParams
@@ -110,16 +117,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
           if (conversation) {
             this.selectConversation(conversation);
           } else {
-            // If not found (e.g. reload), we might need to fetch it or wait for conversations to load
-            // For now, let's look it up in the service's current value directly in case this.conversations isn't synced yet
-            // or we can rely on the updateConversations subscription to handle it eventually if we set a flag,
-            // but simpler is to just try to select it if it appears in the list later or just try to get messages if we have ID.
-
-            // A better approach if not found is to try to load it specifically or wait.
-            // But since we just created it in sidebar, it should be in the service state.
-
-            // Let's create a temporary conversation object if we have the ID, so we can send messages
-            // The full object will eventually update
+            // Create a temporary conversation object if we have the ID
             this.currentConversation = {
               id: conversationId,
               title: 'Loading...',
@@ -127,18 +125,16 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
               createdAt: new Date(),
               updatedAt: new Date()
             };
-            // And load its messages to be sure
             this.selectConversation(this.currentConversation);
           }
         }
       });
   }
 
-  ngAfterViewChecked(): void {
-    if (this.shouldScrollToBottom) {
-      this.scrollToBottom();
-      this.shouldScrollToBottom = false;
-    }
+  ngAfterViewInit(): void {
+    // Scroll service is now managed by the directive
+    // Just ensure we start in "following" state for new conversations
+    this.scrollService.setFollowingState();
   }
 
   ngOnDestroy(): void {
@@ -176,8 +172,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private loadConversations(): void {
-    // Only load if conversations haven't been loaded yet
-    // This prevents redundant API calls since the global sidebar already loads them
     if (!this.chatService.isConversationsLoaded()) {
       this.isLoadingConversations = true;
       this.chatService.getConversations(1, 10, false)
@@ -209,70 +203,9 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
       });
   }
 
-  loadMoreConversations(): void {
-    if (this.isLoadingConversations || !this.pagination.hasMore) return;
-
-    this.isLoadingConversations = true;
-    this.chatService.loadMoreConversations()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.isLoadingConversations = false;
-        },
-        error: () => {
-          this.isLoadingConversations = false;
-        }
-      });
-  }
-
-  private setupInfiniteScroll(): void {
-    // Use IntersectionObserver for better performance
-    if (typeof IntersectionObserver !== 'undefined') {
-      // Observer will be set up after view init
-      setTimeout(() => {
-        if (this.conversationsList) {
-          const listElement = this.conversationsList.nativeElement;
-
-          // Create a sentinel element for intersection observation
-          // We'll observe when user scrolls near the bottom
-          const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-              if (entry.isIntersecting && !this.isLoadingConversations && this.pagination.hasMore) {
-                this.loadMoreConversations();
-              }
-            });
-          }, {
-            root: listElement,
-            rootMargin: '200px', // Load more when 200px from bottom
-            threshold: 0.1
-          });
-
-          // Observe scroll behavior on the list itself
-          // We'll check scroll position manually for better control
-          listElement.addEventListener('scroll', () => {
-            this.handleScroll(listElement);
-          });
-        }
-      }, 100);
-    }
-  }
-
-  private handleScroll(element: HTMLElement): void {
-    if (this.isLoadingConversations || !this.pagination.hasMore) return;
-
-    const scrollTop = element.scrollTop;
-    const scrollHeight = element.scrollHeight;
-    const clientHeight = element.clientHeight;
-
-    // Load more when user scrolls within 300px of the bottom
-    const threshold = 300;
-    if (scrollHeight - scrollTop - clientHeight < threshold) {
-      this.loadMoreConversations();
-    }
-  }
 
   startNewChat(): void {
-    this.chatService.createConversation('New Conversation', this.DEFAULT_SYSTEM_PROMPT)
+    this.chatService.createConversation('New Conversation')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (conversation) => {
@@ -280,7 +213,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
           if (newConv) {
             this.currentConversation = newConv;
           } else {
-            // If not found in list yet, create it directly
             const now = new Date();
             this.currentConversation = {
               id: conversation.conversationId,
@@ -290,6 +222,9 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
               updatedAt: now
             };
           }
+          // Reset scroll state for new conversation
+          this.scrollService.setFollowingState();
+          this.scrollService.clearNewMessages();
         },
         error: (error) => {
           this.errorMessage = 'Failed to create conversation';
@@ -300,23 +235,38 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   selectConversation(conversation: Conversation): void {
     this.currentConversation = conversation;
-    this.shouldScrollToBottom = true;
+
+    // Reset scroll state and scroll to bottom
+    this.scrollService.setFollowingState();
+    this.scrollService.clearNewMessages();
 
     // Load messages if not already loaded
     if (conversation.messages.length === 0) {
-      this.chatService.getMessages(conversation.id)
+      this.chatService.loadLatestMessages(conversation.id, 50)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (messages) => {
-            conversation.messages = messages.map(m => ({
-              id: m.id,
-              role: m.role,
-              content: m.content,
-              timestamp: new Date(m.createdAt)
-            }));
-            this.shouldScrollToBottom = true;
+          next: (response) => {
+            conversation.messages = response.messages
+              .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
+              .map((m: MessageDto) => ({
+                id: m.id,
+                role: m.role,
+                content: m.content,
+                timestamp: new Date(m.createdAt)
+              }));
+
+            if (response.pagination) {
+              conversation.messagePagination = response.pagination;
+              conversation.messagesFullyLoaded = !response.pagination.hasMore && !response.pagination.hasNewer;
+            }
+
+            // Scroll to bottom after messages load
+            setTimeout(() => this.scrollService.scrollToBottom('instant'), 0);
           }
         });
+    } else {
+      // Messages already loaded, scroll to bottom
+      setTimeout(() => this.scrollService.scrollToBottom('instant'), 0);
     }
   }
 
@@ -333,6 +283,116 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
         error: (error) => {
           this.errorMessage = 'Failed to delete conversation';
           console.error(error);
+        }
+      });
+  }
+
+  /**
+   * Load older messages when user scrolls to the top
+   */
+  loadOlderMessages(): void {
+    if (!this.currentConversation ||
+      this.currentConversation.isLoadingOlderMessages ||
+      !this.currentConversation.messagePagination?.hasMore) {
+      return;
+    }
+
+    const oldestMessageId = this.currentConversation.messagePagination.oldestMessageId;
+    if (!oldestMessageId) return;
+
+    this.currentConversation.isLoadingOlderMessages = true;
+
+    // Save current scroll position
+    const container = this.messagesContainer?.nativeElement;
+    const previousScrollHeight = container?.scrollHeight || 0;
+    const previousScrollTop = container?.scrollTop || 0;
+
+    this.chatService.loadOlderMessages(this.currentConversation.id, oldestMessageId, 50)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (!this.currentConversation) return;
+
+          const olderMessages = response.messages
+            .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
+            .map((m: MessageDto) => ({
+              id: m.id,
+              role: m.role,
+              content: m.content,
+              timestamp: new Date(m.createdAt)
+            }));
+
+          this.currentConversation.messages = [...olderMessages, ...this.currentConversation.messages];
+
+          if (response.pagination) {
+            this.currentConversation.messagePagination = response.pagination;
+            this.currentConversation.messagesFullyLoaded = !response.pagination.hasMore && !response.pagination.hasNewer;
+          }
+
+          // Restore scroll position after DOM update
+          setTimeout(() => {
+            if (container) {
+              const newScrollHeight = container.scrollHeight;
+              const scrollDiff = newScrollHeight - previousScrollHeight;
+              container.scrollTop = previousScrollTop + scrollDiff;
+            }
+          }, 0);
+
+          this.currentConversation.isLoadingOlderMessages = false;
+        },
+        error: (error) => {
+          console.error('Failed to load older messages:', error);
+          if (this.currentConversation) {
+            this.currentConversation.isLoadingOlderMessages = false;
+          }
+        }
+      });
+  }
+
+  /**
+   * Load newer messages when user scrolls to the bottom (if not at latest)
+   */
+  loadNewerMessages(): void {
+    if (!this.currentConversation ||
+      this.currentConversation.isLoadingNewerMessages ||
+      !this.currentConversation.messagePagination?.hasNewer) {
+      return;
+    }
+
+    const newestMessageId = this.currentConversation.messagePagination.newestMessageId;
+    if (!newestMessageId) return;
+
+    this.currentConversation.isLoadingNewerMessages = true;
+
+    this.chatService.loadNewerMessages(this.currentConversation.id, newestMessageId, 50)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (!this.currentConversation) return;
+
+          const newerMessages = response.messages
+            .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
+            .map((m: MessageDto) => ({
+              id: m.id,
+              role: m.role,
+              content: m.content,
+              timestamp: new Date(m.createdAt)
+            }));
+
+          this.currentConversation.messages = [...this.currentConversation.messages, ...newerMessages];
+
+          if (response.pagination) {
+            this.currentConversation.messagePagination = response.pagination;
+            this.currentConversation.messagesFullyLoaded = !response.pagination.hasMore && !response.pagination.hasNewer;
+          }
+
+          this.currentConversation.isLoadingNewerMessages = false;
+        },
+        error: (error) => {
+          console.error('Failed to load newer messages:', error);
+          if (this.currentConversation) {
+            this.currentConversation.isLoadingNewerMessages = false;
+          }
         }
       });
   }
@@ -357,7 +417,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
         );
 
         if (conversationDto) {
-          // Use the returned DTO directly instead of finding from array
           const now = new Date();
           this.currentConversation = {
             id: conversationDto.conversationId,
@@ -383,8 +442,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.currentConversation!.messages.push(userMessage);
     this.currentConversation!.updatedAt = new Date();
-    this.shouldScrollToBottom = true;
-
 
     // Create assistant message placeholder
     const assistantMessage: ChatMessage = {
@@ -399,6 +456,12 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.isLoading = true;
     this.startThinkingAnimation();
 
+    // Sending a message is an explicit user intent to return to the latest.
+    // Even if the user was browsing history, we should bring them back to bottom
+    // to see their message + the assistant response.
+    // Wait for DOM to render the new messages before scrolling
+    this.scrollToBottomAfterRender();
+
     // Stream the response
     this.streamResponse(this.currentConversation!.id, messageContent, assistantMessage);
   }
@@ -408,7 +471,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     message: string,
     assistantMessage: ChatMessage
   ): void {
-    this.cancelStream(); // Cancel any existing stream
+    this.cancelStream();
 
     // Reset buffer system
     this.textBuffer = '';
@@ -416,29 +479,32 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.currentAssistantMessage = assistantMessage;
     this.startTypewriter();
 
+    // Notify scroll service that streaming is starting
+    this.scrollService.onStreamingStart();
+
     this.currentStreamSubscription = this.chatService.streamChat(conversationId, message)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: StreamChatResponse) => {
           if (response.content) {
-            // Stop thinking animation on first chunk received
             this.stopThinkingAnimation();
-            // Add to buffer instead of directly to content
             this.textBuffer += response.content;
+
+            // Notify scroll service of streaming content
+            this.scrollService.onStreamingContent();
           }
         },
         error: (error) => {
           console.error('Stream error:', error);
           this.stopThinkingAnimation();
-          // Flush remaining buffer on error
           this.flushBuffer(assistantMessage);
           assistantMessage.isStreaming = false;
           assistantMessage.error = error.message || 'Failed to get response';
           this.isLoading = false;
+          this.scrollService.onStreamingEnd();
         },
         complete: () => {
           this.stopThinkingAnimation();
-          // Wait for buffer to finish, then complete
           this.finishStreaming(assistantMessage);
         }
       });
@@ -449,11 +515,9 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.typewriterInterval = setInterval(() => {
       if (this.textBuffer.length > this.displayedText.length) {
-        // Calculate how many chars to add this tick
         const remainingChars = this.textBuffer.length - this.displayedText.length;
         const charsToAdd = Math.min(this.CHARS_PER_TICK, remainingChars);
 
-        // Get next characters from buffer
         const nextChars = this.textBuffer.substring(
           this.displayedText.length,
           this.displayedText.length + charsToAdd
@@ -461,10 +525,11 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
         this.displayedText += nextChars;
 
-        // Update the message content
         if (this.currentAssistantMessage) {
           this.currentAssistantMessage.content = this.displayedText;
-          this.shouldScrollToBottom = true;
+
+          // Notify scroll service of content update
+          this.scrollService.onStreamingContent();
         }
       }
     }, this.TYPING_SPEED_MS);
@@ -478,7 +543,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private flushBuffer(assistantMessage: ChatMessage): void {
-    // Immediately display all buffered content
     this.stopTypewriter();
     assistantMessage.content = this.textBuffer;
     this.displayedText = this.textBuffer;
@@ -487,7 +551,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private finishStreaming(assistantMessage: ChatMessage): void {
-    // Check if buffer is fully displayed
     const checkComplete = () => {
       if (this.displayedText.length >= this.textBuffer.length) {
         this.stopTypewriter();
@@ -498,8 +561,10 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
         this.displayedText = '';
         this.currentAssistantMessage = null;
         this.chatService.updateConversationLocally(this.currentConversation!);
+
+        // Notify scroll service that streaming ended
+        this.scrollService.onStreamingEnd();
       } else {
-        // Check again after a short delay
         setTimeout(checkComplete, 50);
       }
     };
@@ -520,20 +585,19 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.stopTypewriter();
     this.isLoading = false;
 
-    // Mark the last assistant message as not streaming and flush buffer
     const lastMessage = this.currentConversation?.messages[this.currentConversation.messages.length - 1];
     if (lastMessage && lastMessage.role === 'assistant') {
-      // Keep whatever was displayed so far
       if (this.textBuffer) {
         lastMessage.content = this.displayedText || this.textBuffer;
       }
       lastMessage.isStreaming = false;
     }
 
-    // Reset buffer
     this.textBuffer = '';
     this.displayedText = '';
     this.currentAssistantMessage = null;
+
+    this.scrollService.onStreamingEnd();
   }
 
   copyMessage(message: ChatMessage): void {
@@ -545,7 +609,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   regenerateResponse(message: ChatMessage): void {
     if (!this.currentConversation || this.isLoading) return;
 
-    // Reset any existing buffer
     this.stopTypewriter();
     this.textBuffer = '';
     this.displayedText = '';
@@ -553,13 +616,10 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     const messageIndex = this.currentConversation.messages.findIndex(m => m.id === message.id);
     if (messageIndex > -1) {
-      // Get the previous user message
       const userMessage = this.currentConversation.messages[messageIndex - 1];
       if (userMessage && userMessage.role === 'user') {
-        // Remove the current response
         this.currentConversation.messages.splice(messageIndex, 1);
 
-        // Create new assistant message
         const newAssistantMessage: ChatMessage = {
           id: this.chatService.generateMessageId(),
           role: 'assistant',
@@ -572,7 +632,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
         this.isLoading = true;
         this.startThinkingAnimation();
 
-        // Stream new response
         this.streamResponse(
           this.currentConversation.id,
           userMessage.content,
@@ -582,8 +641,23 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
+  /**
+   * Handle sidebar toggle - preserve scroll position
+   */
   toggleSidebar(): void {
+    // Capture scroll state before layout change
+    this.scrollService.beforeLayoutChange();
+
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+    // Use requestAnimationFrame to wait for layout to settle
+    // This is more reliable than setTimeout as it waits for the next paint
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Double RAF ensures layout is fully complete
+        this.scrollService.afterLayoutChange();
+      });
+    });
   }
 
   onKeyDown(event: KeyboardEvent): void {
@@ -603,14 +677,54 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     return date.toLocaleDateString();
   }
 
-  private scrollToBottom(): void {
-    if (this.messagesContainer) {
-      const element = this.messagesContainer.nativeElement;
-      // Use smooth scrolling for better UX during streaming
-      element.scrollTo({
-        top: element.scrollHeight,
-        behavior: 'smooth'
-      });
+  /**
+   * Scroll to bottom after DOM has rendered new messages
+   * Only scrolls if user is NOT already at the bottom
+   * Uses polling to check when scrollHeight changes, indicating DOM is ready
+   */
+  private scrollToBottomAfterRender(maxAttempts: number = 10): void {
+    const container = this.messagesContainer?.nativeElement;
+    if (!container) {
+      // Fallback: try after a delay
+      setTimeout(() => {
+        if (!this.scrollService.isFollowing) {
+          this.scrollService.scrollToBottom('smooth');
+        }
+      }, 100);
+      return;
     }
+
+    // Check if user is already at bottom before adding messages
+    const wasAtBottom = this.scrollService.isFollowing;
+
+    // If already at bottom, don't scroll - let auto-scroll handle it
+    if (wasAtBottom) {
+      return;
+    }
+
+    const initialScrollHeight = container.scrollHeight;
+    let attempts = 0;
+
+    const checkAndScroll = () => {
+      attempts++;
+      const currentScrollHeight = container.scrollHeight;
+
+      // If scrollHeight changed, DOM has rendered - scroll now
+      if (currentScrollHeight > initialScrollHeight || attempts >= maxAttempts) {
+        // Double-check: only scroll if still not at bottom
+        if (!this.scrollService.isFollowing) {
+          this.scrollService.scrollToBottom('smooth');
+        }
+        return;
+      }
+
+      // Otherwise, check again on next frame
+      requestAnimationFrame(checkAndScroll);
+    };
+
+    // Start checking after Angular change detection cycle
+    requestAnimationFrame(() => {
+      requestAnimationFrame(checkAndScroll);
+    });
   }
 }

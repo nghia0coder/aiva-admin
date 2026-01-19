@@ -11,11 +11,21 @@ $bg-hover: #f5f7fa;
 $bg-surface: #ffffff;
 @use "sass:color";
 
+// Host element must fill parent for proper layout
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
+
 .ai-chat-container {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   height: 100%;
+  width: 100%;
   background: #f8f9fb;
   position: relative;
   overflow: hidden;
@@ -23,13 +33,14 @@ $bg-surface: #ffffff;
 
 // Main Chat Area
 .chat-main {
-  width: 100%;
-  max-width: 1200px;
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  overflow: hidden;
+  min-height: 0; // Important for flex children with overflow
+  // Don't use overflow:hidden here - let messages-wrapper handle scrolling
 }
 
 // Welcome Screen
@@ -131,15 +142,42 @@ $bg-surface: #ffffff;
   }
 }
 
+// Messages Wrapper - Container for messages area and new messages indicator
+.messages-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  // Make this the single scroll container for the chat panel
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; // Important for flex children with overflow
+
+  // Ensure isolation from other scroll contexts (spec requirement)
+  overscroll-behavior: contain;
+
+  // Hide scrollbar for a cleaner look
+  scrollbar-width: none; // Firefox
+  -ms-overflow-style: none; // IE/Edge
+
+  &::-webkit-scrollbar {
+    display: none; // Chrome, Safari, Opera
+  }
+}
+
 // Messages Area
 .messages-area {
-  flex: 1;
-  overflow-y: auto;
+  // Don't use flex: 1 - let content grow naturally
+  // This allows scrolling when content exceeds container height
+  // NOTE: `.messages-wrapper` is the scroll container
   padding: 1.5rem 0;
-  scroll-behavior: smooth;
-  
+  // Reduced padding since input is now sticky within scroll container
+  padding-bottom: 1.5rem;
+  // Note: scroll-behavior is handled programmatically for better control
+  // scroll-behavior: smooth; // Removed - controlled by ChatScrollService
+
   // Optimize for smooth rendering during streaming
-  will-change: scroll-position;
+  will-change: contents;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -179,11 +217,11 @@ $bg-surface: #ffffff;
       }
     }
   }
-  
+
   // Subtle highlight for messages that are actively streaming
   &:has(.streaming-content) {
     background-color: rgba(102, 126, 234, 0.02);
-    
+
     .message-content {
       animation: pulseSubtle 2s ease-in-out infinite;
     }
@@ -225,10 +263,10 @@ $bg-surface: #ffffff;
   background: $bg-surface;
   border-radius: 4px 20px 20px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  
+
   // Smooth transitions for streaming content
   transition: box-shadow 0.3s ease, transform 0.2s ease;
-  
+
   &.streaming-content {
     // Subtle glow during streaming
     box-shadow: 0 2px 12px rgba(102, 126, 234, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -247,7 +285,7 @@ $bg-surface: #ffffff;
     line-height: 1.7;
     color: $text-primary;
     word-break: break-word;
-    
+
     // Smooth appearance transition
     &.has-content {
       animation: contentAppear 0.2s ease-out;
@@ -256,7 +294,7 @@ $bg-surface: #ffffff;
     // ============================================
     // MARKDOWN TYPOGRAPHY
     // ============================================
-    
+
     // Paragraphs
     p {
       margin: 0 0 1rem;
@@ -267,7 +305,12 @@ $bg-surface: #ffffff;
     }
 
     // Headings
-    h1, h2, h3, h4, h5, h6 {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
       margin: 1.5rem 0 0.75rem;
       font-weight: 600;
       color: $text-primary;
@@ -298,22 +341,26 @@ $bg-surface: #ffffff;
       font-size: 1.125rem;
     }
 
-    h5, h6 {
+    h5,
+    h6 {
       font-size: 1rem;
     }
 
     // Bold & Italic
-    strong, b {
+    strong,
+    b {
       font-weight: 700;
       color: $text-primary;
     }
 
-    em, i {
+    em,
+    i {
       font-style: italic;
     }
 
     // Strikethrough
-    del, s {
+    del,
+    s {
       text-decoration: line-through;
       opacity: 0.7;
     }
@@ -321,7 +368,7 @@ $bg-surface: #ffffff;
     // ============================================
     // INLINE CODE
     // ============================================
-    
+
     .inline-code,
     code:not(pre code) {
       background: rgba(102, 126, 234, 0.1);
@@ -337,7 +384,7 @@ $bg-surface: #ffffff;
     // ============================================
     // CODE BLOCKS
     // ============================================
-    
+
     .code-block {
       margin: 1rem 0;
       border-radius: 12px;
@@ -447,8 +494,9 @@ $bg-surface: #ffffff;
     // ============================================
     // LISTS
     // ============================================
-    
-    ul, ol {
+
+    ul,
+    ol {
       margin: 0.75rem 0;
       padding-left: 1.75rem;
 
@@ -462,7 +510,8 @@ $bg-surface: #ffffff;
       }
 
       // Nested lists
-      ul, ol {
+      ul,
+      ol {
         margin: 0.375rem 0;
       }
     }
@@ -514,7 +563,7 @@ $bg-surface: #ffffff;
     // ============================================
     // BLOCKQUOTES
     // ============================================
-    
+
     .markdown-blockquote,
     blockquote {
       margin: 1rem 0;
@@ -539,7 +588,7 @@ $bg-surface: #ffffff;
     // ============================================
     // TABLES
     // ============================================
-    
+
     .table-wrapper {
       margin: 1rem 0;
       overflow-x: auto;
@@ -565,7 +614,8 @@ $bg-surface: #ffffff;
       border-collapse: collapse;
       font-size: 0.875rem;
 
-      th, td {
+      th,
+      td {
         padding: 0.75rem 1rem;
         text-align: left;
         border-bottom: 1px solid $border-color;
@@ -594,7 +644,7 @@ $bg-surface: #ffffff;
     // ============================================
     // LINKS
     // ============================================
-    
+
     a {
       color: #667eea;
       text-decoration: none;
@@ -620,7 +670,7 @@ $bg-surface: #ffffff;
     // ============================================
     // HORIZONTAL RULES
     // ============================================
-    
+
     hr {
       margin: 1.5rem 0;
       border: none;
@@ -631,7 +681,7 @@ $bg-surface: #ffffff;
     // ============================================
     // IMAGES
     // ============================================
-    
+
     img {
       max-width: 100%;
       height: auto;
@@ -643,7 +693,7 @@ $bg-surface: #ffffff;
     // ============================================
     // KEYBOARD SHORTCUTS
     // ============================================
-    
+
     kbd {
       display: inline-block;
       padding: 0.2rem 0.5rem;
@@ -659,7 +709,7 @@ $bg-surface: #ffffff;
     // ============================================
     // ABBREVIATIONS
     // ============================================
-    
+
     abbr[title] {
       text-decoration: underline dotted;
       cursor: help;
@@ -668,15 +718,16 @@ $bg-surface: #ffffff;
     // ============================================
     // SUBSCRIPT & SUPERSCRIPT
     // ============================================
-    
-    sub, sup {
+
+    sub,
+    sup {
       font-size: 0.75em;
     }
 
     // ============================================
     // DETAILS/SUMMARY (Collapsible)
     // ============================================
-    
+
     details {
       margin: 1rem 0;
       padding: 0.75rem 1rem;
@@ -715,7 +766,7 @@ $bg-surface: #ffffff;
 // Thinking Avatar with Glow and Orbiting Particles
 .thinking-avatar {
   position: relative;
-  
+
   .avatar-glow {
     position: absolute;
     inset: -8px;
@@ -723,18 +774,18 @@ $bg-surface: #ffffff;
     border-radius: 50%;
     animation: pulseGlow 2s ease-in-out infinite;
   }
-  
+
   .avatar-icon {
     position: relative;
     z-index: 2;
     animation: gentlePulse 2s ease-in-out infinite;
   }
-  
+
   .orbit-ring {
     position: absolute;
     inset: -12px;
     animation: orbitSpin 3s linear infinite;
-    
+
     .orbit-particle {
       position: absolute;
       width: 6px;
@@ -742,19 +793,19 @@ $bg-surface: #ffffff;
       background: linear-gradient(135deg, #667eea, #764ba2);
       border-radius: 50%;
       box-shadow: 0 0 8px rgba(102, 126, 234, 0.6);
-      
+
       &:nth-child(1) {
         top: 0;
         left: 50%;
         transform: translateX(-50%);
       }
-      
+
       &:nth-child(2) {
         bottom: 15%;
         left: 10%;
         animation-delay: -1s;
       }
-      
+
       &:nth-child(3) {
         bottom: 15%;
         right: 10%;
@@ -778,50 +829,66 @@ $bg-surface: #ffffff;
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.5rem 0;
-  
+
   .neural-waves {
     display: flex;
     gap: 3px;
     height: 24px;
     align-items: center;
-    
+
     .wave {
       width: 4px;
       height: 100%;
       background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
       border-radius: 2px;
       animation: waveBar 1.2s ease-in-out infinite;
-      
-      &:nth-child(1) { animation-delay: 0s; }
-      &:nth-child(2) { animation-delay: 0.15s; }
-      &:nth-child(3) { animation-delay: 0.3s; }
+
+      &:nth-child(1) {
+        animation-delay: 0s;
+      }
+
+      &:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      &:nth-child(3) {
+        animation-delay: 0.3s;
+      }
     }
   }
-  
+
   .thinking-text {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    
+
     .thinking-status {
       font-size: 0.875rem;
       color: $text-secondary;
       font-weight: 500;
       animation: textFade 2s ease-in-out infinite;
     }
-    
+
     .thinking-dots {
       display: flex;
-      
+
       span {
         font-size: 1rem;
         color: #667eea;
         font-weight: bold;
         animation: dotPulse 1.4s ease-in-out infinite;
-        
-        &:nth-child(1) { animation-delay: 0s; }
-        &:nth-child(2) { animation-delay: 0.2s; }
-        &:nth-child(3) { animation-delay: 0.4s; }
+
+        &:nth-child(1) {
+          animation-delay: 0s;
+        }
+
+        &:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        &:nth-child(3) {
+          animation-delay: 0.4s;
+        }
       }
     }
   }
@@ -833,29 +900,27 @@ $bg-surface: #ffffff;
   flex-direction: column;
   gap: 0.625rem;
   margin-top: 0.75rem;
-  
+
   .skeleton-line {
     height: 14px;
-    background: linear-gradient(
-      90deg,
-      rgba(102, 126, 234, 0.08) 0%,
-      rgba(102, 126, 234, 0.18) 20%,
-      rgba(118, 75, 162, 0.18) 40%,
-      rgba(102, 126, 234, 0.08) 100%
-    );
+    background: linear-gradient(90deg,
+        rgba(102, 126, 234, 0.08) 0%,
+        rgba(102, 126, 234, 0.18) 20%,
+        rgba(118, 75, 162, 0.18) 40%,
+        rgba(102, 126, 234, 0.08) 100%);
     background-size: 200% 100%;
     border-radius: 6px;
     animation: shimmer 1.8s ease-in-out infinite;
-    
+
     &.long {
       width: 100%;
     }
-    
+
     &.medium {
       width: 75%;
       animation-delay: 0.1s;
     }
-    
+
     &.short {
       width: 50%;
       animation-delay: 0.2s;
@@ -866,7 +931,7 @@ $bg-surface: #ffffff;
 // Streaming Content Styles
 .streaming-content {
   position: relative;
-  
+
   .message-text {
     // Smooth text rendering
     -webkit-font-smoothing: antialiased;
@@ -878,15 +943,15 @@ $bg-surface: #ffffff;
 .streaming-text {
   // Smooth transition for content changes
   transition: all 0.15s ease-out;
-  
+
   // Subtle text shadow for better readability during streaming
   text-shadow: 0 0 0 transparent;
-  
+
   // Inner content should flow smoothly
   * {
     animation: smoothContentReveal 0.2s ease-out;
   }
-  
+
   // Last paragraph gets the typing cursor effect
   p:last-of-type::after,
   &:not(:has(p))::after {
@@ -901,14 +966,15 @@ $bg-surface: #ffffff;
     animation: typingCursor 0.6s ease-in-out infinite;
     box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
   }
-  
+
   // Code blocks should appear smoothly
   .code-block {
     animation: codeBlockReveal 0.3s ease-out;
   }
-  
+
   // Lists appear with stagger effect
-  ul li, ol li {
+  ul li,
+  ol li {
     animation: listItemReveal 0.25s ease-out both;
   }
 }
@@ -922,11 +988,11 @@ $bg-surface: #ffffff;
   padding-top: 0.75rem;
   border-top: 1px solid rgba(102, 126, 234, 0.1);
   animation: fadeInSlide 0.3s ease-out;
-  
+
   .stream-cursor {
     display: none; // Hidden since we use CSS ::after cursor now
   }
-  
+
   .stream-wave {
     display: flex;
     gap: 3px;
@@ -934,32 +1000,35 @@ $bg-surface: #ffffff;
     padding: 6px 12px;
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.05));
     border-radius: 20px;
-    
+
     span {
       width: 3px;
       background: linear-gradient(180deg, #667eea, #764ba2);
       border-radius: 2px;
       animation: streamWaveSmooth 1.2s ease-in-out infinite;
-      
-      &:nth-child(1) { 
+
+      &:nth-child(1) {
         height: 8px;
-        animation-delay: 0s; 
+        animation-delay: 0s;
       }
-      &:nth-child(2) { 
+
+      &:nth-child(2) {
         height: 14px;
-        animation-delay: 0.15s; 
+        animation-delay: 0.15s;
       }
-      &:nth-child(3) { 
+
+      &:nth-child(3) {
         height: 10px;
-        animation-delay: 0.3s; 
+        animation-delay: 0.3s;
       }
-      &:nth-child(4) { 
+
+      &:nth-child(4) {
         height: 6px;
-        animation-delay: 0.45s; 
+        animation-delay: 0.45s;
       }
     }
   }
-  
+
   // Optional streaming label
   &::after {
     font-size: 0.75rem;
@@ -1031,10 +1100,16 @@ $bg-surface: #ffffff;
   }
 }
 
-// Input Area
+// Input Area - Sticky at bottom of scroll container
 .input-area {
+  position: sticky;
+  bottom: 0;
+  // No hardcoded left/right - works within scroll container
+  z-index: 50; // Above messages but below modals/overlays
   padding: 1rem 1.5rem 1.5rem;
-  background: linear-gradient(to top, #f8f9fb 50%, transparent);
+
+  // Ensure it stays within scroll container bounds
+  width: 100%;
 }
 
 .input-container {
@@ -1139,6 +1214,7 @@ $bg-surface: #ffffff;
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1150,6 +1226,7 @@ $bg-surface: #ffffff;
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1157,19 +1234,25 @@ $bg-surface: #ffffff;
 }
 
 @keyframes blink {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0;
   }
 }
 
 @keyframes typing {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
     opacity: 0.5;
   }
+
   50% {
     transform: translateY(-6px);
     opacity: 1;
@@ -1188,10 +1271,13 @@ $bg-surface: #ffffff;
 
 // Avatar glow pulse
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.4;
   }
+
   50% {
     transform: scale(1.2);
     opacity: 0.7;
@@ -1200,9 +1286,12 @@ $bg-surface: #ffffff;
 
 // Gentle avatar pulse
 @keyframes gentlePulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
@@ -1213,6 +1302,7 @@ $bg-surface: #ffffff;
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -1220,10 +1310,13 @@ $bg-surface: #ffffff;
 
 // Neural wave bars
 @keyframes waveBar {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scaleY(0.4);
     opacity: 0.5;
   }
+
   50% {
     transform: scaleY(1);
     opacity: 1;
@@ -1232,9 +1325,12 @@ $bg-surface: #ffffff;
 
 // Thinking status text fade
 @keyframes textFade {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.7;
   }
+
   50% {
     opacity: 1;
   }
@@ -1242,10 +1338,13 @@ $bg-surface: #ffffff;
 
 // Dot pulse for ellipsis
 @keyframes dotPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.3;
     transform: translateY(0);
   }
+
   50% {
     opacity: 1;
     transform: translateY(-3px);
@@ -1257,6 +1356,7 @@ $bg-surface: #ffffff;
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -1264,10 +1364,13 @@ $bg-surface: #ffffff;
 
 // Cursor blink for streaming
 @keyframes cursorBlink {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scaleY(1);
   }
+
   50% {
     opacity: 0.4;
     transform: scaleY(0.8);
@@ -1276,10 +1379,13 @@ $bg-surface: #ffffff;
 
 // Stream wave animation
 @keyframes streamWave {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scaleY(0.6);
     opacity: 0.5;
   }
+
   50% {
     transform: scaleY(1);
     opacity: 1;
@@ -1288,18 +1394,23 @@ $bg-surface: #ffffff;
 
 // Smoother stream wave with elastic feel
 @keyframes streamWaveSmooth {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scaleY(0.4);
     opacity: 0.4;
   }
+
   25% {
     transform: scaleY(0.9);
     opacity: 0.8;
   }
+
   50% {
     transform: scaleY(1);
     opacity: 1;
   }
+
   75% {
     transform: scaleY(0.7);
     opacity: 0.6;
@@ -1312,6 +1423,7 @@ $bg-surface: #ffffff;
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1323,6 +1435,7 @@ $bg-surface: #ffffff;
   from {
     opacity: 0.7;
   }
+
   to {
     opacity: 1;
   }
@@ -1333,9 +1446,11 @@ $bg-surface: #ffffff;
   0% {
     opacity: 0;
   }
+
   50% {
     opacity: 0.5;
   }
+
   100% {
     opacity: 0;
   }
@@ -1347,11 +1462,14 @@ $bg-surface: #ffffff;
 
 // Typing cursor with glow
 @keyframes typingCursor {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scaleY(1);
     box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
   }
+
   50% {
     opacity: 0.3;
     transform: scaleY(0.9);
@@ -1365,6 +1483,7 @@ $bg-surface: #ffffff;
     opacity: 0.6;
     filter: blur(0.5px);
   }
+
   to {
     opacity: 1;
     filter: blur(0);
@@ -1377,6 +1496,7 @@ $bg-surface: #ffffff;
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1389,6 +1509,7 @@ $bg-surface: #ffffff;
     opacity: 0;
     transform: translateX(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -1401,6 +1522,7 @@ $bg-surface: #ffffff;
     opacity: 0;
     transform: translateY(2px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1409,9 +1531,12 @@ $bg-surface: #ffffff;
 
 // Smooth text glow pulse during streaming
 @keyframes textGlowPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     text-shadow: 0 0 0 transparent;
   }
+
   50% {
     text-shadow: 0 0 10px rgba(102, 126, 234, 0.15);
   }
@@ -1422,6 +1547,7 @@ $bg-surface: #ffffff;
   from {
     opacity: 0.8;
   }
+
   to {
     opacity: 1;
   }
@@ -1429,15 +1555,26 @@ $bg-surface: #ffffff;
 
 // Subtle pulse for streaming messages
 @keyframes pulseSubtle {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 2px 12px rgba(102, 126, 234, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06);
   }
+
   50% {
     box-shadow: 0 2px 16px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 }
 
 // Responsive Design
+@media (max-width: 1024px) {
+  .input-area {
+    // On tablet, account for potential sidebar collapse
+    left: 72px; // Collapsed sidebar width
+    right: 0; // No right sidebar on tablet
+  }
+}
+
 @media (max-width: 768px) {
   .welcome-content {
     .welcome-title {
@@ -1478,6 +1615,14 @@ $bg-surface: #ffffff;
 
   .input-area {
     padding: 0.75rem 1rem 1rem;
+    // Adjust backdrop for mobile
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  // Adjust messages padding for mobile sticky input
+  .messages-area {
+    padding-bottom: calc(1.5rem + 120px); // Slightly less padding on mobile
   }
 
   .input-container {
@@ -1492,5 +1637,45 @@ $bg-surface: #ffffff;
   .send-btn {
     width: 36px;
     height: 36px;
+  }
+}
+
+// ============================================
+// CURSOR PAGINATION LOADING INDICATORS
+// ============================================
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin: 0.5rem auto;
+  max-width: 900px;
+  color: $text-muted;
+  font-size: 0.875rem;
+  animation: fadeIn 0.3s ease;
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid $border-color;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  &.older-messages-loading {
+    margin-top: 0;
+  }
+
+  &.newer-messages-loading {
+    margin-bottom: 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }

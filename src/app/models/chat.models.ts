@@ -45,6 +45,34 @@ export interface MessageDto {
     createdAt: string;
 }
 
+// Cursor-based pagination models
+export interface PaginationInfo {
+    hasMore: boolean;          // More older messages exist
+    hasNewer: boolean;         // More newer messages exist
+    oldestMessageId?: string;  // Cursor for loading older messages
+    newestMessageId?: string;  // Cursor for loading newer messages
+    oldestTimestamp?: string;  // Timestamp of oldest message
+    newestTimestamp?: string;  // Timestamp of newest message
+    totalMessages: number;     // Total message count in conversation
+    returnedCount: number;     // Number of messages in current response
+}
+
+export interface ConversationMetadata {
+    totalMessages: number;
+    totalTokens?: number;
+    lastActiveAt?: string;
+}
+
+export interface ConversationHistoryResponse {
+    id: string;
+    title: string;
+    systemPrompt?: string;
+    createdAt: string;
+    messages: MessageDto[];
+    metadata?: ConversationMetadata;
+    pagination?: PaginationInfo;
+}
+
 // Frontend models
 export interface ChatMessage {
     id: string;
@@ -61,7 +89,13 @@ export interface Conversation {
     messages: ChatMessage[];
     createdAt: Date;
     updatedAt: Date;
+    // Pagination state for messages
+    messagePagination?: PaginationInfo;
+    isLoadingOlderMessages?: boolean;
+    isLoadingNewerMessages?: boolean;
+    messagesFullyLoaded?: boolean; // True when all messages are loaded
 }
+
 
 export interface SuggestedPrompt {
     icon: string;
