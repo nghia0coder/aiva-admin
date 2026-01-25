@@ -1,7 +1,7 @@
 import { Component, ElementRef, ViewChild, OnInit, OnDestroy, inject, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import {
   ChatMessage,
@@ -36,6 +36,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly chatService = inject(ChatService);
   private readonly scrollService = inject(ChatScrollService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
 
   userInput = '';
@@ -111,6 +112,19 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
         const conversationId = params['conversationId'];
+        
+        // Clear current conversation if conversationId changed or is null
+        if (!conversationId || this.currentConversation?.id !== conversationId) {
+          // Cancel any ongoing streams
+          this.cancelStream();
+          this.stopThinkingAnimation();
+          this.isLoading = false;
+          this.errorMessage = '';
+          
+          // Clear current conversation
+          this.currentConversation = null;
+        }
+        
         if (conversationId) {
           // Try to find in existing conversations first
           const conversation = this.conversations.find(c => c.id === conversationId);
@@ -235,6 +249,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   selectConversation(conversation: Conversation): void {
     this.currentConversation = conversation;
+    this.errorMessage = '';
 
     // Reset scroll state and scroll to bottom
     this.scrollService.setFollowingState();
@@ -262,6 +277,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
             // Scroll to bottom after messages load
             setTimeout(() => this.scrollService.scrollToBottom('instant'), 0);
+          },
+          error: (error) => {
+            console.error('Failed to load messages:', error);
+            
+            // Check if conversation doesn't exist
+            if (error.status === 404 || error.message?.includes('not found') || error.message?.includes('does not exist')) {
+              this.errorMessage = 'This conversation no longer exists. It may have been deleted.';
+              this.currentConversation = null;
+              
+              // Navigate to empty state after a short delay
+              setTimeout(() => {
+                this.router.navigate(['/chat']);
+              }, 2000);
+            } else {
+              this.errorMessage = 'Failed to load conversation messages.';
+            }
           }
         });
     } else {
@@ -499,7 +530,29 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           this.stopThinkingAnimation();
           this.flushBuffer(assistantMessage);
           assistantMessage.isStreaming = false;
-          assistantMessage.error = error.message || 'Failed to get response';
+          
+          // Check if conversation was deleted/not found
+          if (error.status === 404 || error.message?.includes('not found') || error.message?.includes('does not exist')) {
+            assistantMessage.error = 'This conversation no longer exists. It may have been deleted.';
+            this.errorMessage = 'Conversation not found. Redirecting...';
+            
+            // Remove the assistant message placeholder
+            if (this.currentConversation) {
+              const index = this.currentConversation.messages.indexOf(assistantMessage);
+              if (index > -1) {
+                this.currentConversation.messages.splice(index, 1);
+              }
+            }
+            
+            // Navigate to empty state after a short delay
+            setTimeout(() => {
+              this.router.navigate(['/chat']);
+            }, 2000);
+          } else {
+            assistantMessage.error = error.message || 'Failed to get response';
+            this.errorMessage = 'Failed to send message. Please try again.';
+          }
+          
           this.isLoading = false;
           this.scrollService.onStreamingEnd();
         },

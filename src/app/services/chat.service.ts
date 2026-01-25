@@ -26,7 +26,8 @@ export class ChatService {
     private readonly endpoints = {
         streamChat: (conversationId: string) => `/conversations/${conversationId}/stream`,
         conversations: '/conversations',
-        messages: (conversationId: string) => `/conversations/${conversationId}/messages`
+        messages: (conversationId: string) => `/conversations/${conversationId}/messages`,
+        updateTitle: (conversationId: string) => `/conversations/${conversationId}/title`
     };
 
     // State management
@@ -264,6 +265,22 @@ export class ChatService {
                     ...pagination,
                     totalCount: Math.max(0, pagination.totalCount - 1)
                 });
+            })
+        );
+    }
+
+    /**
+     * Manually update conversation title
+     */
+    updateConversationTitleManually(conversationId: string, title: string): Observable<void> {
+        const request = { Title: title };
+        return this.api.put<{ Title: string }, void>(
+            this.endpoints.updateTitle(conversationId),
+            request
+        ).pipe(
+            tap(() => {
+                // Update local state immediately
+                this.updateConversationTitle(conversationId, title);
             })
         );
     }

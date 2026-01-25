@@ -25,16 +25,44 @@
     } @else {
     <ul class="conversation-list">
       @for (conversation of chatConversations; track conversation.id) {
-      <li class="conversation-item" (click)="selectConversation(conversation)">
+      <li class="conversation-item" 
+          [class.selected]="isSelected(conversation.id)"
+          (click)="selectConversation(conversation)">
         <svg class="chat-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
           xmlns="http://www.w3.org/2000/svg">
           <path
             d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z"
             fill="currentColor" />
         </svg>
+        @if (isEditing(conversation.id)) {
+        <input type="text" class="title-edit-input" [(ngModel)]="editingTitle"
+          (click)="$event.stopPropagation()" (keydown)="onTitleInputKeydown($event, conversation.id)"
+          (blur)="saveTitle($event, conversation.id)" [maxlength]="200" autofocus />
+        } @else {
         <span class="conversation-title">
           <app-typing-text [text]="conversation.title"></app-typing-text>
         </span>
+        <div class="conversation-actions">
+          <button class="edit-title-btn" (click)="startEditingTitle($event, conversation)"
+            title="Edit title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                fill="currentColor" />
+            </svg>
+          </button>
+          <button class="delete-conversation-btn" (click)="openDeleteModal($event, conversation)"
+            [disabled]="isDeleting(conversation.id)" title="Delete conversation">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                fill="currentColor" />
+            </svg>
+          </button>
+        </div>
+        }
       </li>
       }
     </ul>
@@ -60,3 +88,46 @@
     }
   </div>
 </aside>
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal && conversationToDelete) {
+<div class="modal-overlay" (click)="closeDeleteModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Delete Conversation</h3>
+      <button class="modal-close-btn" (click)="closeDeleteModal()" title="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="warning-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="currentColor"/>
+        </svg>
+      </div>
+      <p class="modal-message">
+        Are you sure you want to delete <strong>"{{ conversationToDelete.title }}"</strong>?
+      </p>
+      <p class="modal-warning">This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel-btn" (click)="closeDeleteModal()" [disabled]="isDeleting(conversationToDelete.id)">
+        Cancel
+      </button>
+      <button class="modal-btn delete-btn" (click)="confirmDelete()" [disabled]="isDeleting(conversationToDelete.id)">
+        @if (isDeleting(conversationToDelete.id)) {
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="spinner">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.25" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" />
+        </svg>
+        <span>Deleting...</span>
+        } @else {
+        <span>Delete</span>
+        }
+      </button>
+    </div>
+  </div>
+</div>
+}

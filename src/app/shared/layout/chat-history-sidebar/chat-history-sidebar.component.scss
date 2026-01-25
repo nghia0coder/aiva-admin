@@ -200,6 +200,25 @@
       transform: translateX(-2px);
     }
 
+    &.selected {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+      border-color: rgba(102, 126, 234, 0.3);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+
+      &::before {
+        opacity: 1;
+      }
+
+      .chat-icon {
+        color: #667eea;
+      }
+
+      .conversation-title {
+        color: #667eea;
+        font-weight: 600;
+      }
+    }
+
     .chat-icon {
       color: #b0b0b0;
       flex-shrink: 0;
@@ -216,6 +235,91 @@
       text-overflow: ellipsis;
       transition: color 0.3s ease;
       letter-spacing: -0.01em;
+    }
+
+    .conversation-actions {
+      display: none;
+      align-items: center;
+      gap: 0.25rem;
+      margin-left: 0.5rem;
+    }
+
+    &:hover .conversation-actions {
+      display: flex;
+    }
+
+    .edit-title-btn,
+    .delete-conversation-btn {
+      padding: 0.375rem;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #b0b0b0;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+
+      &:active {
+        transform: scale(0.95);
+      }
+
+      svg {
+        display: block;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .edit-title-btn {
+      &:hover:not(:disabled) {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        transform: scale(1.1);
+      }
+    }
+
+    .delete-conversation-btn {
+      &:hover:not(:disabled) {
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+        transform: scale(1.1);
+      }
+
+      .spinner {
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .title-edit-input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      color: #2a2a2a;
+      font-weight: 500;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      background: white;
+      outline: none;
+      font-family: inherit;
+      letter-spacing: -0.01em;
+      transition: all 0.2s ease;
+
+      &:focus {
+        border-color: #764ba2;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
     }
   }
 }
@@ -378,5 +482,191 @@
     &:active {
       transform: translateY(0);
     }
+  }
+}
+
+/* Delete Confirmation Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 440px;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+
+  .modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2a2a2a;
+    letter-spacing: -0.02em;
+  }
+
+  .modal-close-btn {
+    padding: 0.375rem;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #b0b0b0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: #2a2a2a;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+  text-align: center;
+
+  .warning-icon {
+    margin-bottom: 1rem;
+    color: #dc2626;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    svg {
+      animation: warningPulse 2s ease-in-out infinite;
+    }
+  }
+
+  .modal-message {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: #2a2a2a;
+    line-height: 1.5;
+
+    strong {
+      color: #667eea;
+      font-weight: 600;
+    }
+  }
+
+  .modal-warning {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #666;
+    font-style: italic;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+  justify-content: flex-end;
+
+  .modal-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    &:not(:disabled):active {
+      transform: translateY(1px);
+    }
+  }
+
+  .cancel-btn {
+    background: rgba(102, 126, 234, 0.08);
+    color: #667eea;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+
+    &:hover:not(:disabled) {
+      background: rgba(102, 126, 234, 0.12);
+      border-color: rgba(102, 126, 234, 0.3);
+    }
+  }
+
+  .delete-btn {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes warningPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
   }
 }
