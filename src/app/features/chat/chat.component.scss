@@ -1568,10 +1568,8 @@ $bg-surface: #ffffff;
 
 // Responsive Design
 @media (max-width: 1024px) {
-  .input-area {
-    // On tablet, account for potential sidebar collapse
-    left: 72px; // Collapsed sidebar width
-    right: 0; // No right sidebar on tablet
+  .chat-main {
+    max-width: 100%; // Use full available width on smaller screens
   }
 }
 

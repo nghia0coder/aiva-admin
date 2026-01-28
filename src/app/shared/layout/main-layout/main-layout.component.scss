@@ -19,7 +19,7 @@
   // Removed overflow-y: auto - chat component manages its own scroll
   // This eliminates the dual scroll context issue
   overflow: hidden;
-  padding: 0; // Padding moved to chat component for better control
+  padding: 1.5rem; // Add padding for better spacing between sidebars
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
@@ -29,6 +29,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
+    max-width: 100%; // Ensure content doesn't overflow
     min-height: 0; // Important for flex children with overflow
     height: 100%; // Ensure it fills the grid cell
 
@@ -55,6 +56,16 @@
     grid-template-areas:
       "header"
       "main-content";
+  }
+
+  // Hide both sidebars on tablet and mobile
+  app-sidebar,
+  app-chat-history-sidebar {
+    display: none;
+  }
+
+  .main-content {
+    padding: 1rem; // Reduce padding on smaller screens
   }
 }
 

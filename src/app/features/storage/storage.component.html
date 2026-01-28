@@ -1,9 +1,11 @@
-<div class="storage-container">
+<div class="storage-container" (click)="closeFolderMenu()">
   <div class="page-header">
     <div class="header-content">
       <div class="header-icon">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" fill="currentColor"/>
+          <path
+            d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"
+            fill="currentColor" />
         </svg>
       </div>
       <div>
@@ -13,130 +15,446 @@
     </div>
 
     <div class="header-actions">
-      <button class="action-button secondary">
+      <!-- Upload File button - only show when inside a folder -->
+      @if (currentFolderId !== null) {
+      <button class="action-button secondary" (click)="openUploadModalForCurrentFolder()">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V12.5M5.83333 8.33333L10 12.5M10 12.5L14.1667 8.33333M10 12.5V2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 14V6M10 6L7 9M10 6L13 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path d="M4 16H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
-        <span>Download</span>
+        <span>Upload File</span>
       </button>
-      <button class="action-button primary">
+      }
+
+      <button class="action-button primary" (click)="openCreateModal()">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 5V15M5 10H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M10 5V15M5 10H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
-        <span>Upload</span>
+        <span>Create Folder</span>
       </button>
     </div>
   </div>
 
-  <div class="storage-stats">
-    <div class="stats-card">
-      <div class="stats-header">
-        <div class="stats-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="currentColor"/>
-          </svg>
-        </div>
-        <div class="stats-info">
-          <h3>Storage Usage</h3>
-          <p class="stats-value">{{ storageUsed }} GB <span class="stats-total">of {{ storageTotal }} GB</span></p>
-        </div>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" [style.width.%]="storagePercentage"></div>
-      </div>
-      <div class="stats-footer">
-        <span class="stats-percentage">{{ storagePercentage | number:'1.0-1' }}% Used</span>
-        <a href="#" class="stats-link">Upgrade Storage</a>
-      </div>
+  <!-- Search Bar -->
+  <div class="search-section">
+    <div class="search-bar">
+      <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"
+        xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M19 19L14.65 14.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" />
+      </svg>
+      <input type="text" class="search-input" placeholder="Search folders..." [(ngModel)]="searchTerm"
+        (keyup.enter)="onSearch()" />
+      @if (searchTerm) {
+      <button class="clear-search-btn" (click)="clearSearch()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      }
+      <button class="search-button" (click)="onSearch()">Search</button>
     </div>
   </div>
+
+  <!-- Breadcrumbs -->
+  @if (breadcrumbs.length > 0) {
+  <div class="breadcrumbs-section">
+    <nav class="breadcrumbs">
+      @for (breadcrumb of breadcrumbs; track breadcrumb.path; let isLast = $last) {
+      <button class="breadcrumb-item" [class.active]="isLast" (click)="navigateToBreadcrumb(breadcrumb)"
+        [disabled]="isLast">
+        {{ breadcrumb.name }}
+      </button>
+      @if (!isLast) {
+      <svg class="breadcrumb-separator" width="16" height="16" viewBox="0 0 16 16" fill="none"
+        xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" />
+      </svg>
+      }
+      }
+    </nav>
+  </div>
+  }
 
   <div class="files-section">
     <div class="section-header">
       <h2>Files & Folders</h2>
-      <div class="view-toggle">
-        <button class="toggle-btn active">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/>
-            <rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/>
-            <rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/>
-            <rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/>
-          </svg>
-        </button>
-        <button class="toggle-btn">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <line x1="3" y1="5" x2="17" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <line x1="3" y1="15" x2="17" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
+      <div class="results-info">
+        @if (!isLoading && !errorMessage) {
+        <span class="results-count">{{ totalCount }} {{ totalCount === 1 ? 'item' : 'items' }}</span>
+        }
       </div>
     </div>
 
+    <!-- Loading State -->
+    @if (isLoading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading folders...</p>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (errorMessage && !isLoading) {
+    <div class="error-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+        <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <h3>Error Loading Folders</h3>
+      <p>{{ errorMessage }}</p>
+      <button class="retry-button" (click)="retry()">Try Again</button>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading && !errorMessage && files.length === 0) {
+    <div class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M10 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V8C22 6.89543 21.1046 6 20 6H12L10 4Z"
+          stroke="currentColor" stroke-width="2" />
+      </svg>
+      <h3>No Folders Found</h3>
+      <p>{{ searchTerm ? 'Try adjusting your search terms' : 'Start by creating your first folder' }}</p>
+    </div>
+    }
+
+    <!-- Files Grid -->
+    @if (!isLoading && !errorMessage && files.length > 0) {
     <div class="files-grid">
-      @for (file of files; track file.id) {
-        <div class="file-card">
-          <div class="file-icon">
-            @switch (getFileIcon(file)) {
-              @case ('folder') {
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V8C22 6.89543 21.1046 6 20 6H12L10 4Z" fill="currentColor"/>
-                </svg>
-              }
-              @case ('pdf') {
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#D32F2F"/>
-                  <path d="M14 2V8H20" fill="#F44336"/>
-                </svg>
-              }
-              @case ('xlsx') {
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#1E7E34"/>
-                  <path d="M14 2V8H20" fill="#28A745"/>
-                </svg>
-              }
-              @case ('docx') {
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#1E4E9E"/>
-                  <path d="M14 2V8H20" fill="#2B5FAA"/>
-                </svg>
-              }
-              @case ('pptx') {
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#D24726"/>
-                  <path d="M14 2V8H20" fill="#E67A47"/>
-                </svg>
-              }
-              @default {
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#606060"/>
-                  <path d="M14 2V8H20" fill="#909090"/>
-                </svg>
-              }
+      @for (file of files; track file.type + '-' + file.id) {
+      <div class="file-card" (click)="onItemClick(file)">
+        <div class="file-icon">
+          @switch (getFileIcon(file)) {
+          @case ('folder') {
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M10 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V8C22 6.89543 21.1046 6 20 6H12L10 4Z"
+              fill="currentColor" />
+          </svg>
+          }
+          @case ('pdf') {
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#D32F2F" />
+            <path d="M14 2V8H20" fill="#F44336" />
+          </svg>
+          }
+          @case ('xlsx') {
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#1E7E34" />
+            <path d="M14 2V8H20" fill="#28A745" />
+          </svg>
+          }
+          @case ('docx') {
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#1E4E9E" />
+            <path d="M14 2V8H20" fill="#2B5FAA" />
+          </svg>
+          }
+          @case ('pptx') {
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#D24726" />
+            <path d="M14 2V8H20" fill="#E67A47" />
+          </svg>
+          }
+          @default {
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#606060" />
+            <path d="M14 2V8H20" fill="#909090" />
+          </svg>
+          }
+          }
+        </div>
+        <div class="file-info">
+          <h4 class="file-name">{{ file.name }}</h4>
+          <div class="file-meta">
+            @if (file.size) {
+            <span class="file-size">{{ file.size }}</span>
+            <span class="separator">•</span>
             }
-          </div>
-          <div class="file-info">
-            <h4 class="file-name">{{ file.name }}</h4>
-            <div class="file-meta">
-              @if (file.size) {
-                <span class="file-size">{{ file.size }}</span>
-                <span class="separator">•</span>
-              }
-              <span class="file-date">{{ file.modified }}</span>
-            </div>
-          </div>
-          <div class="file-actions">
-            <button class="action-menu-btn">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
-                <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
-                <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
-              </svg>
-            </button>
+            <span class="file-date">{{ file.modified }}</span>
           </div>
         </div>
+        <div class="file-actions">
+          @if (file.type === 'folder') {
+          <div class="action-menu-wrapper">
+            <button class="action-menu-btn" (click)="toggleFolderMenu($event, file.id)"
+              [class.active]="openMenuFolderId === file.id">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="10" cy="4" r="1.5" fill="currentColor" />
+                <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+                <circle cx="10" cy="16" r="1.5" fill="currentColor" />
+              </svg>
+            </button>
+            @if (openMenuFolderId === file.id) {
+            <div class="action-menu-dropdown" (click)="$event.stopPropagation()">
+              <button class="menu-item" (click)="openUploadModal($event, file)">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 12V4M9 4L6 7M9 4L12 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                  <path d="M3 14H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <span>Upload File</span>
+              </button>
+            </div>
+            }
+          </div>
+          }
+          @if (file.type === 'file') {
+          <div class="action-menu-wrapper">
+            <button class="action-menu-btn" (click)="toggleFileMenu($event, file.id)"
+              [class.active]="openMenuFileId === file.id">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="10" cy="4" r="1.5" fill="currentColor" />
+                <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+                <circle cx="10" cy="16" r="1.5" fill="currentColor" />
+              </svg>
+            </button>
+            @if (openMenuFileId === file.id) {
+            <div class="action-menu-dropdown" (click)="$event.stopPropagation()">
+              <button class="menu-item delete-item" (click)="openDeleteModal($event, file)">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M3 5H15M14 5L13.5 14C13.5 15.1046 12.6046 16 11.5 16H6.5C5.39543 16 4.5 15.1046 4.5 14L4 5M7 8V13M11 8V13M8 2H10C10.5523 2 11 2.44772 11 3V5H7V3C7 2.44772 7.44772 2 8 2Z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Delete File</span>
+              </button>
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
       }
+    </div>
+
+    <!-- Pagination Controls -->
+    @if (totalPages > 1) {
+    <div class="pagination">
+      <button class="pagination-btn" [disabled]="!hasPreviousPage" (click)="previousPage()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        Previous
+      </button>
+
+      <div class="pagination-numbers">
+        @for (pageNum of pageNumbers; track pageNum) {
+        <button class="pagination-number" [class.active]="pageNum === currentPage" (click)="goToPage(pageNum)">
+          {{ pageNum }}
+        </button>
+        }
+      </div>
+
+      <button class="pagination-btn" [disabled]="!hasNextPage" (click)="nextPage()">
+        Next
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="pagination-info">
+      Showing page {{ currentPage }} of {{ totalPages }} ({{ totalCount }} total items)
+    </div>
+    }
+    }
+  </div>
+</div>
+
+<!-- Create Folder Modal -->
+@if (showCreateModal) {
+<div class="modal-overlay" (click)="closeCreateModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Create New Folder</h3>
+      <button class="modal-close-btn" (click)="closeCreateModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="folderName" class="form-label">Folder Name</label>
+        <input type="text" id="folderName" class="form-input" placeholder="Enter folder name"
+          [(ngModel)]="newFolderName" (keyup.enter)="isFolderNameValid && !isCreating && createFolder()"
+          [disabled]="isCreating" autofocus />
+        <div class="form-hint">Maximum 255 characters</div>
+      </div>
+
+      @if (createError) {
+      <div class="error-message">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" />
+          <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span>{{ createError }}</span>
+      </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-button secondary" (click)="closeCreateModal()" [disabled]="isCreating">
+        Cancel
+      </button>
+      <button class="modal-button primary" (click)="createFolder()" [disabled]="!isFolderNameValid || isCreating">
+        @if (isCreating) {
+        <div class="button-spinner"></div>
+        <span>Creating...</span>
+        } @else {
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M10 4H4C2.89543 4 2 4.89543 2 6V14C2 15.1046 2.89543 16 4 16H16C17.1046 16 18 15.1046 18 14V8C18 6.89543 17.1046 6 16 6H12L10 4Z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>Create Folder</span>
+        }
+      </button>
     </div>
   </div>
 </div>
+}
+
+<!-- Upload File Modal -->
+@if (showUploadModal && selectedFolder) {
+<div class="modal-overlay" (click)="closeUploadModal()">
+  <div class="modal-content upload-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Upload File to "{{ selectedFolder.name }}"</h3>
+      <button class="modal-close-btn" (click)="closeUploadModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="upload-area">
+        <input type="file" id="fileInput" class="file-input" (change)="onFileSelected($event)"
+          [disabled]="isUploading" />
+        <label for="fileInput" class="file-input-label" [class.disabled]="isUploading">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 32V16M24 16L18 22M24 16L30 22" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+              stroke-linejoin="round" />
+            <path d="M8 36H40" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          </svg>
+          <div class="upload-text">
+            @if (selectedFile) {
+            <p class="file-selected">{{ selectedFile.name }}</p>
+            <p class="file-size-text">{{ selectedFileSize }}</p>
+            } @else {
+            <p class="primary-text">Click to select a file</p>
+            <p class="secondary-text">or drag and drop here</p>
+            <p class="hint-text">Maximum file size: 100MB</p>
+            }
+          </div>
+        </label>
+      </div>
+
+      @if (uploadProgress > 0 && uploadProgress < 100) { <div class="upload-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+        </div>
+        <span class="progress-text">{{ uploadProgress }}%</span>
+    </div>
+    }
+
+    @if (uploadError) {
+    <div class="error-message">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" />
+        <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <span>{{ uploadError }}</span>
+    </div>
+    }
+  </div>
+
+  <div class="modal-footer">
+    <button class="modal-button secondary" (click)="closeUploadModal()" [disabled]="isUploading">
+      Cancel
+    </button>
+    <button class="modal-button primary" (click)="uploadFile()" [disabled]="!canUpload">
+      @if (isUploading) {
+      <div class="button-spinner"></div>
+      <span>Uploading...</span>
+      } @else {
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 14V6M10 6L7 9M10 6L13 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" />
+        <path d="M4 16H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <span>Upload File</span>
+      }
+    </button>
+  </div>
+</div>
+</div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal && fileToDelete) {
+<div class="modal-overlay" (click)="closeDeleteModal()">
+  <div class="modal-content delete-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Delete File</h3>
+      <button class="modal-close-btn" (click)="closeDeleteModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="delete-warning">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="30" fill="#FEF2F2" />
+          <path
+            d="M32 20V34M32 42H32.02M16 24H48M44 24L42 48C42 50.2091 40.2091 52 38 52H26C23.7909 52 22 50.2091 22 48L20 24M28 24V16C28 14.8954 28.8954 14 30 14H34C35.1046 14 36 14.8954 36 16V24"
+            stroke="#DC2626" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <div class="delete-message">
+        <h4>Are you sure you want to delete this file?</h4>
+        <p class="file-name-display">"{{ fileToDelete.name }}"</p>
+        <p class="warning-text">This action cannot be undone. The file will be permanently deleted.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-button secondary" (click)="closeDeleteModal()" [disabled]="isDeletingFile">
+        Cancel
+      </button>
+      <button class="modal-button danger" (click)="confirmDeleteFile()" [disabled]="isDeletingFile">
+        @if (isDeletingFile) {
+        <div class="button-spinner"></div>
+        <span>Deleting...</span>
+        } @else {
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M3 5H17M15 5L14.5 15C14.5 16.1046 13.6046 17 12.5 17H7.5C6.39543 17 5.5 16.1046 5.5 15L5 5M8 8V13M12 8V13M9 2H11C11.5523 2 12 2.44772 12 3V5H8V3C8 2.44772 8.44772 2 9 2Z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>Delete File</span>
+        }
+      </button>
+    </div>
+  </div>
+</div>
+}
 

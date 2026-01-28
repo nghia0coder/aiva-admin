@@ -1,9 +1,9 @@
-<div class="main-layout">
+<div class="main-layout" [class.sidebar-collapsed]="sidebarCollapsed">
   <app-header />
   <app-sidebar />
   <app-chat-history-sidebar />
   
-  <main class="main-content" [class.sidebar-collapsed]="sidebarCollapsed">
+  <main class="main-content">
     <div class="content-wrapper">
       <router-outlet />
     </div>
