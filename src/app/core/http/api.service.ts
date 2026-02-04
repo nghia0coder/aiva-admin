@@ -98,11 +98,11 @@ export class ApiService {
             const result = await firstValueFrom(
                 this.authService.acquireTokenSilent(environment.apiConfig.scopes || [])
             );
-            
+
             if (!result?.accessToken) {
                 throw new Error('No access token received');
             }
-            
+
             return result.accessToken;
         } catch (error) {
             console.error('Failed to acquire access token:', error);
@@ -153,28 +153,68 @@ export class ApiService {
                         for (const line of lines) {
                             if (!line.trim()) continue;
 
-                            // Handle SSE format: "data: {...}"
+                            // Parse SSE event format
+                            const eventMatch = line.match(/^event:\s*(.+)$/m);
                             const dataMatch = line.match(/^data:\s*(.+)$/m);
+
                             if (dataMatch) {
                                 try {
                                     const data = JSON.parse(dataMatch[1]);
+                                    const eventType = eventMatch ? eventMatch[1] : 'message';
 
-                                    // Check for completion signal
-                                    if (data.isComplete || data.complete || data.event === 'done') {
+                                    // Handle different event types
+                                    if (eventType === 'done') {
+                                        observer.next({
+                                            type: 'done',
+                                            data: data
+                                        } as T);
                                         observer.complete();
                                         return;
-                                    }
-
-                                    // Check for error
-                                    if (data.error) {
-                                        observer.error(new Error(data.error));
+                                    } else if (eventType === 'error') {
+                                        observer.next({
+                                            type: 'error',
+                                            data: data
+                                        } as T);
+                                        observer.error(new Error(data.message || 'Stream error'));
                                         return;
-                                    }
+                                    } else if (eventType === 'structured_data_start') {
+                                        observer.next({
+                                            type: 'structured_data_start',
+                                            data: data
+                                        } as T);
+                                    } else if (eventType === 'structured_data_row') {
+                                        observer.next({
+                                            type: 'structured_data_row',
+                                            data: data
+                                        } as T);
+                                    } else if (eventType === 'structured_data_complete') {
+                                        observer.next({
+                                            type: 'structured_data_complete',
+                                            data: data
+                                        } as T);
+                                    } else {
+                                        // Default 'message' event
+                                        // Support both old format (direct data) and new format (wrapped in event)
+                                        if (data.isComplete || data.complete) {
+                                            observer.next({
+                                                type: 'done',
+                                                data: data
+                                            } as T);
+                                            observer.complete();
+                                            return;
+                                        }
 
-                                    observer.next(data as T);
+                                        observer.next({
+                                            type: 'message',
+                                            data: data
+                                        } as T);
+                                    }
                                 } catch (parseError) {
                                     // If it's plain text content (not JSON)
-                                    observer.next({ content: dataMatch[1] } as T);
+                                    observer.next({
+                                        type: 'message',
+                                        data: { content: dataMatch[1] }
+                                    } as T);
                                 }
                             }
                         }
@@ -206,7 +246,7 @@ export class ApiService {
             } else {
                 // Server-side error
                 errorMessage = error.error?.message || error.message || `Error Code: ${error.status}`;
-                
+
                 // Handle authentication errors
                 if (error.status === 401) {
                     errorMessage = 'Unauthorized. Please login again.';

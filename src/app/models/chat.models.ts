@@ -40,9 +40,14 @@ export interface PaginatedConversationsResponse {
 export interface MessageDto {
     id: string;
     conversationId: string;
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string;
     createdAt: string;
+    responseType?: {
+        name: string;
+        value: number;
+    };
+    structuredData?: import('./structured-response.models').StructuredDataEvent;
 }
 
 // Cursor-based pagination models
@@ -76,11 +81,13 @@ export interface ConversationHistoryResponse {
 // Frontend models
 export interface ChatMessage {
     id: string;
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string;
     timestamp: Date;
     isStreaming?: boolean;
     error?: string;
+    responseType?: 'text' | 'structured_table';
+    structuredData?: import('./structured-response.models').StructuredDataEvent;
 }
 
 export interface Conversation {

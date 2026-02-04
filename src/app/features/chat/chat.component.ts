@@ -7,7 +7,6 @@ import {
   ChatMessage,
   Conversation,
   SuggestedPrompt,
-  StreamChatResponse,
   MessageDto
 } from '@/models/chat.models';
 import { ChatService } from '@/services/chat.service';
@@ -15,6 +14,8 @@ import { ChatScrollService } from '@/services/chat-scroll.service';
 import { MarkdownPipe } from '@/shared/pipes/markdown.pipe';
 import { ChatScrollDirective } from '@/shared/directives/chat-scroll.directive';
 import { NewMessagesIndicatorComponent } from '@/shared/components/new-messages-indicator/new-messages-indicator.component';
+import { StructuredTableComponent } from '@/shared/components/structured-table/structured-table.component';
+import { ActionMetadata } from '@/models/structured-response.models';
 
 @Component({
   selector: 'app-chat',
@@ -24,7 +25,8 @@ import { NewMessagesIndicatorComponent } from '@/shared/components/new-messages-
     FormsModule,
     MarkdownPipe,
     ChatScrollDirective,
-    NewMessagesIndicatorComponent
+    NewMessagesIndicatorComponent,
+    StructuredTableComponent
   ],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
@@ -112,7 +114,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
         const conversationId = params['conversationId'];
-        
+
         // Clear current conversation if conversationId changed or is null
         if (!conversationId || this.currentConversation?.id !== conversationId) {
           // Cancel any ongoing streams
@@ -120,11 +122,11 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           this.stopThinkingAnimation();
           this.isLoading = false;
           this.errorMessage = '';
-          
+
           // Clear current conversation
           this.currentConversation = null;
         }
-        
+
         if (conversationId) {
           // Try to find in existing conversations first
           const conversation = this.conversations.find(c => c.id === conversationId);
@@ -263,12 +265,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           next: (response) => {
             conversation.messages = response.messages
               .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
-              .map((m: MessageDto) => ({
-                id: m.id,
-                role: m.role,
-                content: m.content,
-                timestamp: new Date(m.createdAt)
-              }));
+              .map((m: MessageDto) => {
+                const message: ChatMessage = {
+                  id: m.id,
+                  role: m.role,
+                  content: m.content,
+                  timestamp: new Date(m.createdAt)
+                };
+
+                // Handle structured data if present
+                if (m.responseType && m.responseType.name === 'Structured' && m.structuredData) {
+                  message.responseType = 'structured_table';
+                  message.structuredData = m.structuredData;
+                }
+
+                return message;
+              });
 
             if (response.pagination) {
               conversation.messagePagination = response.pagination;
@@ -280,12 +292,12 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           },
           error: (error) => {
             console.error('Failed to load messages:', error);
-            
+
             // Check if conversation doesn't exist
             if (error.status === 404 || error.message?.includes('not found') || error.message?.includes('does not exist')) {
               this.errorMessage = 'This conversation no longer exists. It may have been deleted.';
               this.currentConversation = null;
-              
+
               // Navigate to empty state after a short delay
               setTimeout(() => {
                 this.router.navigate(['/chat']);
@@ -346,12 +358,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
           const olderMessages = response.messages
             .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
-            .map((m: MessageDto) => ({
-              id: m.id,
-              role: m.role,
-              content: m.content,
-              timestamp: new Date(m.createdAt)
-            }));
+            .map((m: MessageDto) => {
+              const message: ChatMessage = {
+                id: m.id,
+                role: m.role,
+                content: m.content,
+                timestamp: new Date(m.createdAt)
+              };
+
+              // Handle structured data if present
+              if (m.responseType && m.responseType.name === 'Structured' && m.structuredData) {
+                message.responseType = 'structured_table';
+                message.structuredData = m.structuredData;
+              }
+
+              return message;
+            });
 
           this.currentConversation.messages = [...olderMessages, ...this.currentConversation.messages];
 
@@ -403,12 +425,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
           const newerMessages = response.messages
             .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
-            .map((m: MessageDto) => ({
-              id: m.id,
-              role: m.role,
-              content: m.content,
-              timestamp: new Date(m.createdAt)
-            }));
+            .map((m: MessageDto) => {
+              const message: ChatMessage = {
+                id: m.id,
+                role: m.role,
+                content: m.content,
+                timestamp: new Date(m.createdAt)
+              };
+
+              // Handle structured data if present
+              if (m.responseType && m.responseType.name === 'Structured' && m.structuredData) {
+                message.responseType = 'structured_table';
+                message.structuredData = m.structuredData;
+              }
+
+              return message;
+            });
 
           this.currentConversation.messages = [...this.currentConversation.messages, ...newerMessages];
 
@@ -516,13 +548,60 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentStreamSubscription = this.chatService.streamChat(conversationId, message)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response: StreamChatResponse) => {
-          if (response.content) {
-            this.stopThinkingAnimation();
-            this.textBuffer += response.content;
+        next: (event) => {
+          // Handle different SSE event types
+          switch (event.type) {
+            case 'message':
+              // Text content streaming
+              if (event.data?.content) {
+                this.stopThinkingAnimation();
+                this.textBuffer += event.data.content;
 
-            // Notify scroll service of streaming content
-            this.scrollService.onStreamingContent();
+                // Notify scroll service of streaming content
+                this.scrollService.onStreamingContent();
+              }
+              break;
+
+            case 'structured_data_start':
+              // Initialize table with metadata and columns
+              this.stopThinkingAnimation();
+              assistantMessage.responseType = 'structured_table';
+              assistantMessage.structuredData = {
+                metadata: event.data.metadata,
+                columns: event.data.columns,
+                rows: [],
+                globalActions: []
+              };
+              console.log('Table initialized:', event.data);
+              break;
+
+            case 'structured_data_row':
+              // Add row progressively
+              if (assistantMessage.structuredData) {
+                assistantMessage.structuredData.rows.push(event.data);
+                console.log('Row added:', event.data);
+
+                // Notify scroll service for smooth scrolling
+                this.scrollService.onStreamingContent();
+              }
+              break;
+
+            case 'structured_data_complete':
+              // Add global actions
+              if (assistantMessage.structuredData) {
+                assistantMessage.structuredData.globalActions = event.data.globalActions;
+                console.log('Table complete with global actions:', event.data);
+              }
+              break;
+
+            case 'done':
+              // Stream completion - handled in complete callback
+              break;
+
+            case 'error':
+              // Error event
+              console.error('Stream error event:', event.data);
+              break;
           }
         },
         error: (error) => {
@@ -530,12 +609,12 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           this.stopThinkingAnimation();
           this.flushBuffer(assistantMessage);
           assistantMessage.isStreaming = false;
-          
+
           // Check if conversation was deleted/not found
           if (error.status === 404 || error.message?.includes('not found') || error.message?.includes('does not exist')) {
             assistantMessage.error = 'This conversation no longer exists. It may have been deleted.';
             this.errorMessage = 'Conversation not found. Redirecting...';
-            
+
             // Remove the assistant message placeholder
             if (this.currentConversation) {
               const index = this.currentConversation.messages.indexOf(assistantMessage);
@@ -543,7 +622,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.currentConversation.messages.splice(index, 1);
               }
             }
-            
+
             // Navigate to empty state after a short delay
             setTimeout(() => {
               this.router.navigate(['/chat']);
@@ -552,7 +631,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
             assistantMessage.error = error.message || 'Failed to get response';
             this.errorMessage = 'Failed to send message. Please try again.';
           }
-          
+
           this.isLoading = false;
           this.scrollService.onStreamingEnd();
         },
@@ -657,6 +736,39 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     navigator.clipboard.writeText(message.content).then(() => {
       // Could add toast notification here
     });
+  }
+
+  /**
+   * Handle action clicks from structured table (e.g., Add to Cart, View Detail)
+   */
+  onActionClick(action: ActionMetadata): void {
+    if (action.isDisabled) {
+      console.warn('Action is disabled:', action.disabledReason);
+      // Could show a toast notification here
+      return;
+    }
+
+    console.log('Action clicked:', action);
+
+    // TODO: Implement actual action handling based on action.type
+    // For now, just log the action. In a real implementation, you would:
+    // 1. Make HTTP request to action.endpoint with action.method
+    // 2. Pass action.params as request body/query params
+    // 3. Show success/error notifications
+    // 4. Update UI state (e.g., cart count, wishlist, etc.)
+
+    // Example implementation:
+    // this.http.request(action.method, action.endpoint, { body: action.params })
+    //   .subscribe({
+    //     next: (response) => {
+    //       console.log('Action succeeded:', response);
+    //       // Show success toast
+    //     },
+    //     error: (error) => {
+    //       console.error('Action failed:', error);
+    //       // Show error toast
+    //     }
+    //   });
   }
 
   regenerateResponse(message: ChatMessage): void {

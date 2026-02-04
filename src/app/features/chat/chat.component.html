@@ -2,12 +2,8 @@
   <!-- Main chat area -->
   <main class="chat-main">
     <!-- Single chat scroll container (so sticky input works reliably) -->
-    <div class="messages-wrapper"
-         #messagesContainer
-         appChatScroll
-         [scrollThreshold]="200"
-         (scrolledNearTop)="loadOlderMessages()"
-         (scrolledNearBottom)="loadNewerMessages()">
+    <div class="messages-wrapper" #messagesContainer appChatScroll [scrollThreshold]="200"
+      (scrolledNearTop)="loadOlderMessages()" (scrolledNearBottom)="loadNewerMessages()">
 
       @if (!hasMessages) {
       <!-- Welcome Screen -->
@@ -85,8 +81,26 @@
               @if (message.role === 'assistant') {
               <span class="message-sender">AIVA</span>
               }
+
+              <!-- Text Response -->
+              @if (!message.responseType || message.responseType === 'text') {
               <div class="message-text" [class.streaming-text]="message.isStreaming"
                 [class.has-content]="message.content.length > 0" [innerHTML]="message.content | markdown"></div>
+              }
+
+              <!-- Structured Table Response -->
+              @if (message.responseType === 'structured_table') {
+              <!-- Chatbot text (if any) -->
+              @if (message.content) {
+              <div class="message-text chatbot-intro-text" [innerHTML]="message.content | markdown"></div>
+              }
+
+              <!-- Structured table -->
+              @if (message.structuredData) {
+              <app-structured-table [tableData]="message.structuredData" (actionClick)="onActionClick($event)">
+              </app-structured-table>
+              }
+              }
 
               @if (message.isStreaming && message.content.length > 0) {
               <div class="streaming-indicator">

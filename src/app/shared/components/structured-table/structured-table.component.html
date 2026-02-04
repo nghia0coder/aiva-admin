@@ -1,0 +1,103 @@
+<div class="structured-table-container" *ngIf="tableData">
+    <!-- Table Header -->
+    <div class="table-header">
+        <h3>{{ tableData.metadata.title }}</h3>
+        <p *ngIf="tableData.metadata.description" class="description">
+            {{ tableData.metadata.description }}
+        </p>
+        <span class="count-badge">
+            {{ tableData.metadata.displayedCount }} / {{ tableData.metadata.totalCount }} items
+        </span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="checkbox-column">
+                        <input type="checkbox" aria-label="Select all rows">
+                    </th>
+                    <th *ngFor="let column of tableData.columns; trackBy: trackByColumnKey">
+                        {{ column.label }}
+                    </th>
+                    <th class="actions-column">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let row of tableData.rows; trackBy: trackByRowId" [class.selected]="isRowSelected(row.id)">
+
+                    <!-- Checkbox Column -->
+                    <td class="checkbox-column">
+                        <input type="checkbox" [checked]="isRowSelected(row.id)" (change)="onRowSelect(row.id)"
+                            [attr.aria-label]="'Select row ' + row.id">
+                    </td>
+
+                    <!-- Dynamic Columns -->
+                    <td *ngFor="let column of tableData.columns; trackBy: trackByColumnKey"
+                        [attr.data-column-type]="column.type">
+
+                        <!-- Text Column -->
+                        <span *ngIf="column.type === 'Text'">
+                            {{ getCellValue(row, column.key) }}
+                        </span>
+
+                        <!-- Image Column -->
+                        <img *ngIf="column.type === 'Image'" [src]="getCellValue(row, column.key)"
+                            [alt]="row.cells['name'] || 'Product image'" class="product-image" loading="lazy">
+
+                        <!-- Currency Column -->
+                        <span *ngIf="column.type === 'Currency'" class="currency">
+                            {{ formatCurrency(getCellValue(row, column.key)) }}
+                        </span>
+
+                        <!-- Rating Column -->
+                        <div *ngIf="column.type === 'Rating'" class="rating">
+                            <span class="star-icon">⭐</span>
+                            <span class="rating-value">{{ getCellValue(row, column.key) | number:'1.1-1' }}</span>
+                        </div>
+
+                        <!-- Number Column -->
+                        <span *ngIf="column.type === 'Number'">
+                            {{ formatNumber(getCellValue(row, column.key)) }}
+                        </span>
+
+                        <!-- Date Column -->
+                        <span *ngIf="column.type === 'Date'">
+                            {{ formatDate(getCellValue(row, column.key)) }}
+                        </span>
+
+                        <!-- Boolean Column -->
+                        <span *ngIf="column.type === 'Boolean'" class="boolean-indicator">
+                            <span *ngIf="getCellValue(row, column.key)" class="check-icon">✓</span>
+                            <span *ngIf="!getCellValue(row, column.key)" class="cross-icon">✗</span>
+                        </span>
+
+                    </td>
+
+                    <!-- Actions Column -->
+                    <td class="actions-column">
+                        <div class="action-buttons">
+                            <button *ngFor="let action of row.actions" class="action-btn"
+                                [class.primary-action]="action.type === 'AddToCart'"
+                                [class.disabled]="action.isDisabled" [disabled]="action.isDisabled"
+                                [title]="action.disabledReason || action.label" (click)="onActionClick(action, $event)">
+                                <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
+                                <span class="action-label">{{ action.label }}</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Global Actions -->
+    <div *ngIf="tableData.globalActions && tableData.globalActions.length > 0" class="global-actions">
+        <button *ngFor="let action of tableData.globalActions" class="global-action-btn" [disabled]="action.isDisabled"
+            (click)="onActionClick(action)">
+            <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
+            <span>{{ action.label }}</span>
+        </button>
+    </div>
+</div>

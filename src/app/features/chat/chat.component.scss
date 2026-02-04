@@ -1677,3 +1677,29 @@ $bg-surface: #ffffff;
     transform: rotate(360deg);
   }
 }
+
+// ============================================
+// STRUCTURED TABLE RESPONSE STYLES
+// ============================================
+
+// Intro text before structured table
+.chatbot-intro-text {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid $border-color;
+}
+
+// Ensure structured table component fits well in message
+app-structured-table {
+  display: block;
+  margin: 0;
+
+  // Override table container background to match message
+  ::ng-deep .structured-table-container {
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+}
