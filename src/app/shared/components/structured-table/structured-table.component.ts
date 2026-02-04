@@ -83,4 +83,29 @@ export class StructuredTableComponent {
     trackByColumnKey(index: number, column: TableColumn): string {
         return column.key;
     }
+
+    getMaterialIcon(iconName: string): string {
+        if (!iconName) return '';
+
+        const map: { [key: string]: string } = {
+            'cart': 'shopping_cart',
+            'add-to-cart': 'add_shopping_cart',
+            'eye': 'visibility',
+            'view': 'visibility',
+            'compare': 'compare_arrows',
+            'delete': 'delete',
+            'trash': 'delete',
+            'edit': 'edit',
+            'pencil': 'edit',
+            'check': 'check',
+            'close': 'close',
+            'cancel': 'cancel',
+            'search': 'search',
+            'detail': 'info',
+            'info': 'info'
+        };
+
+        const key = iconName.toLowerCase();
+        return map[key] || iconName;
+    }
 }

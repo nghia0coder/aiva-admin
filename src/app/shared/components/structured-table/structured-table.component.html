@@ -82,7 +82,8 @@
                                 [class.primary-action]="action.type === 'AddToCart'"
                                 [class.disabled]="action.isDisabled" [disabled]="action.isDisabled"
                                 [title]="action.disabledReason || action.label" (click)="onActionClick(action, $event)">
-                                <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
+                                <span *ngIf="action.icon" class="action-icon material-icons">{{
+                                    getMaterialIcon(action.icon) }}</span>
                                 <span class="action-label">{{ action.label }}</span>
                             </button>
                         </div>
@@ -96,7 +97,7 @@
     <div *ngIf="tableData.globalActions && tableData.globalActions.length > 0" class="global-actions">
         <button *ngFor="let action of tableData.globalActions" class="global-action-btn" [disabled]="action.isDisabled"
             (click)="onActionClick(action)">
-            <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
+            <span *ngIf="action.icon" class="action-icon material-icons">{{ getMaterialIcon(action.icon) }}</span>
             <span>{{ action.label }}</span>
         </button>
     </div>
