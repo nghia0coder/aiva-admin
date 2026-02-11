@@ -192,6 +192,17 @@ export class ApiService {
                                             type: 'structured_data_complete',
                                             data: data
                                         } as T);
+                                    } else if (eventType === 'chart') {
+                                        observer.next({
+                                            type: 'chart',
+                                            data: data
+                                        } as T);
+                                    } else if (eventType === 'table') {
+                                        // Handle table event (markdown table)
+                                        observer.next({
+                                            type: 'message',
+                                            data: data
+                                        } as T);
                                     } else {
                                         // Default 'message' event
                                         // Support both old format (direct data) and new format (wrapped in event)

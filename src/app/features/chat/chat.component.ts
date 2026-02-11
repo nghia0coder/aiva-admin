@@ -15,6 +15,7 @@ import { MarkdownPipe } from '@/shared/pipes/markdown.pipe';
 import { ChatScrollDirective } from '@/shared/directives/chat-scroll.directive';
 import { NewMessagesIndicatorComponent } from '@/shared/components/new-messages-indicator/new-messages-indicator.component';
 import { StructuredTableComponent } from '@/shared/components/structured-table/structured-table.component';
+import { ChartComponent } from '@/shared/components/chart/chart.component';
 import { ActionMetadata } from '@/models/structured-response.models';
 
 @Component({
@@ -26,7 +27,8 @@ import { ActionMetadata } from '@/models/structured-response.models';
     MarkdownPipe,
     ChatScrollDirective,
     NewMessagesIndicatorComponent,
-    StructuredTableComponent
+    StructuredTableComponent,
+    ChartComponent
   ],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
@@ -279,6 +281,12 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
                   message.structuredData = m.structuredData;
                 }
 
+                // Handle chart data if present
+                if (m.responseType && m.responseType.name === 'Chart' && (m as any).chartData) {
+                  message.responseType = 'chart';
+                  message.chartData = (m as any).chartData;
+                }
+
                 return message;
               });
 
@@ -372,6 +380,12 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
                 message.structuredData = m.structuredData;
               }
 
+              // Handle chart data if present
+              if (m.responseType && m.responseType.name === 'Chart' && (m as any).chartData) {
+                message.responseType = 'chart';
+                message.chartData = (m as any).chartData;
+              }
+
               return message;
             });
 
@@ -437,6 +451,12 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
               if (m.responseType && m.responseType.name === 'Structured' && m.structuredData) {
                 message.responseType = 'structured_table';
                 message.structuredData = m.structuredData;
+              }
+
+              // Handle chart data if present
+              if (m.responseType && m.responseType.name === 'Chart' && (m as any).chartData) {
+                message.responseType = 'chart';
+                message.chartData = (m as any).chartData;
               }
 
               return message;
@@ -592,6 +612,18 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
                 assistantMessage.structuredData.globalActions = event.data.globalActions;
                 console.log('Table complete with global actions:', event.data);
               }
+              break;
+
+            case 'chart':
+              // Chart data streaming
+              this.stopThinkingAnimation();
+              assistantMessage.responseType = 'chart';
+              // Backend wraps config in { config: {...}, chartType: "...", type: "chartjs" }
+              assistantMessage.chartData = event.data.config || event.data;
+              console.log('Chart received:', event.data);
+
+              // Notify scroll service for smooth scrolling
+              this.scrollService.onStreamingContent();
               break;
 
             case 'done':

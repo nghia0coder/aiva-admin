@@ -70,6 +70,7 @@ export type SSEEventType =
     | 'structured_data_start'        // Table initialization (metadata + columns)
     | 'structured_data_row'          // Single table row (progressive)
     | 'structured_data_complete'     // Global actions after all rows
+    | 'chart'                        // Chart data (Chart.js configuration)
     | 'done'                         // Stream completion
     | 'error';                       // Error event
 

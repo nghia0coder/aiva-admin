@@ -102,6 +102,19 @@
               }
               }
 
+              <!-- Chart Response -->
+              @if (message.responseType === 'chart') {
+              <!-- Chatbot text (if any) -->
+              @if (message.content) {
+              <div class="message-text chatbot-intro-text" [innerHTML]="message.content | markdown"></div>
+              }
+
+              <!-- Chart -->
+              @if (message.chartData) {
+              <app-chart [chartConfig]="message.chartData"></app-chart>
+              }
+              }
+
               @if (message.isStreaming && message.content.length > 0) {
               <div class="streaming-indicator">
                 <div class="stream-wave">

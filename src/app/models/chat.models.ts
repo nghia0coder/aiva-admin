@@ -48,6 +48,7 @@ export interface MessageDto {
         value: number;
     };
     structuredData?: import('./structured-response.models').StructuredDataEvent;
+    chartData?: ChartConfiguration;
 }
 
 // Cursor-based pagination models
@@ -86,8 +87,29 @@ export interface ChatMessage {
     timestamp: Date;
     isStreaming?: boolean;
     error?: string;
-    responseType?: 'text' | 'structured_table';
+    responseType?: 'text' | 'structured_table' | 'chart';
     structuredData?: import('./structured-response.models').StructuredDataEvent;
+    chartData?: ChartConfiguration;
+}
+
+// Chart.js configuration interface
+export interface ChartConfiguration {
+    type: 'bar' | 'line' | 'pie' | 'doughnut' | 'radar' | 'polarArea' | 'bubble' | 'scatter';
+    data: {
+        labels?: string[];
+        datasets: ChartDataset[];
+    };
+    options?: any;
+}
+
+export interface ChartDataset {
+    label?: string;
+    data: number[];
+    backgroundColor?: string | string[];
+    borderColor?: string | string[];
+    borderWidth?: number;
+    tension?: number;
+    fill?: boolean;
 }
 
 export interface Conversation {
