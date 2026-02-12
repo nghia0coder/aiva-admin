@@ -82,37 +82,31 @@
               <span class="message-sender">AIVA</span>
               }
 
-              <!-- Text Response -->
-              @if (!message.responseType || message.responseType === 'text') {
+              <!-- Show text content if it's a simple text message OR if there's intro text for structured responses -->
+              @if ((!message.responseType || message.responseType === 'text') && message.content) {
               <div class="message-text" [class.streaming-text]="message.isStreaming"
                 [class.has-content]="message.content.length > 0" [innerHTML]="message.content | markdown"></div>
               }
 
-              <!-- Structured Table Response -->
-              @if (message.responseType === 'structured_table') {
-              <!-- Chatbot text (if any) -->
-              @if (message.content) {
+              <!-- For structured responses, show intro text first -->
+              @if ((message.responseType === 'structured_table' || message.responseType === 'chart' || message.responseType === 'markdown_table') && message.content) {
               <div class="message-text chatbot-intro-text" [innerHTML]="message.content | markdown"></div>
               }
 
-              <!-- Structured table -->
+              <!-- Show markdown table if present -->
+              @if (message.markdownTable) {
+              <div class="markdown-table-container" [innerHTML]="message.markdownTable | markdown"></div>
+              }
+
+              <!-- Show structured table if present -->
               @if (message.structuredData) {
               <app-structured-table [tableData]="message.structuredData" (actionClick)="onActionClick($event)">
               </app-structured-table>
               }
-              }
 
-              <!-- Chart Response -->
-              @if (message.responseType === 'chart') {
-              <!-- Chatbot text (if any) -->
-              @if (message.content) {
-              <div class="message-text chatbot-intro-text" [innerHTML]="message.content | markdown"></div>
-              }
-
-              <!-- Chart -->
+              <!-- Show chart if present -->
               @if (message.chartData) {
               <app-chart [chartConfig]="message.chartData"></app-chart>
-              }
               }
 
               @if (message.isStreaming && message.content.length > 0) {

@@ -589,55 +589,157 @@ $bg-surface: #ffffff;
     // TABLES
     // ============================================
 
-    .table-wrapper {
-      margin: 1rem 0;
+    ::ng-deep .table-wrapper {
+      margin: 1.5rem 0;
       overflow-x: auto;
       border-radius: 12px;
+      background: $bg-surface;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       border: 1px solid $border-color;
 
       &::-webkit-scrollbar {
-        height: 6px;
+        height: 8px;
       }
 
       &::-webkit-scrollbar-track {
         background: $bg-hover;
+        border-radius: 4px;
       }
 
       &::-webkit-scrollbar-thumb {
-        background: $border-color;
-        border-radius: 3px;
+        background: #c1c7cd;
+        border-radius: 4px;
+
+        &:hover {
+          background: #a8aeb4;
+        }
       }
     }
 
-    table {
+    ::ng-deep table {
       width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.9rem;
+      min-width: 600px;
+      line-height: 1.5;
 
-      th,
-      td {
-        padding: 0.75rem 1rem;
-        text-align: left;
-        border-bottom: 1px solid $border-color;
+      thead {
+        tr {
+          th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f8fafc;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: $text-secondary;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid $border-color;
+            white-space: nowrap;
+
+            &:first-child {
+              padding-left: 2rem;
+              text-align: center;
+            }
+
+            &:last-child {
+              padding-right: 2rem;
+            }
+          }
+        }
       }
 
-      th {
-        background: $bg-hover;
-        font-weight: 600;
-        color: $text-primary;
-        white-space: nowrap;
+      tbody {
+        tr {
+          transition: background-color 0.2s ease;
+
+          td {
+            padding: 1rem 1.5rem;
+            color: $text-primary;
+            border-bottom: 1px solid $border-color;
+            vertical-align: middle;
+            background-color: $bg-surface;
+            text-align: center;
+
+            &:first-child {
+              padding-left: 2rem;
+              font-weight: 500;
+              color: $text-primary;
+              text-align: center;
+            }
+
+            &:last-child {
+              padding-right: 2rem;
+            }
+
+            // Auto-detect and right-align numeric content
+            &[align="right"] {
+              text-align: center;
+              font-variant-numeric: tabular-nums;
+              font-family: 'JetBrains Mono', monospace; // Better for numbers
+              font-weight: 500;
+            }
+          }
+
+          &:last-child td {
+            border-bottom: none;
+          }
+
+          &:hover td {
+            background-color: #f8fafc;
+          }
+
+          // Striped rows (optional, let's keep it subtle)
+          &:nth-child(even) td {
+            background-color: #fafbfc;
+          }
+
+          &:nth-child(even):hover td {
+            background-color: #f1f5f9;
+          }
+        }
+      }
+    }
+
+    // Responsive table styling for mobile devices
+    @media (max-width: 768px) {
+      ::ng-deep .table-wrapper {
+        border-radius: 8px;
+        margin: 1rem 0;
       }
 
-      td {
-        color: $text-secondary;
-      }
+      ::ng-deep table {
+        min-width: 100%;
+        font-size: 0.8125rem;
 
-      tr:last-child td {
-        border-bottom: none;
-      }
+        thead th {
+          padding: 0.75rem 1rem;
+          font-size: 0.7rem;
 
-      tr:hover td {
-        background: rgba(102, 126, 234, 0.04);
+          &:first-child {
+            padding-left: 1rem;
+          }
+
+          &:last-child {
+            padding-right: 1rem;
+          }
+        }
+
+        tbody td {
+          padding: 0.75rem 1rem;
+
+          &:first-child {
+            padding-left: 1rem;
+          }
+
+          &:last-child {
+            padding-right: 1rem;
+          }
+        }
       }
     }
 
@@ -1687,6 +1789,17 @@ $bg-surface: #ffffff;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid $border-color;
+}
+
+// Markdown table container styling
+.markdown-table-container {
+  display: block;
+  margin: 1rem 0 0 0;
+
+  // Inherit all table styling from .message-text
+  ::ng-deep .table-wrapper {
+    margin: 0;
+  }
 }
 
 // Ensure structured table component fits well in message

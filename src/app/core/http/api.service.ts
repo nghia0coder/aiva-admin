@@ -198,9 +198,9 @@ export class ApiService {
                                             data: data
                                         } as T);
                                     } else if (eventType === 'table') {
-                                        // Handle table event (markdown table)
+                                        // Handle table event (markdown table) as separate event
                                         observer.next({
-                                            type: 'message',
+                                            type: 'table',
                                             data: data
                                         } as T);
                                     } else {

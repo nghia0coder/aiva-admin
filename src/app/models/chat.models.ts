@@ -87,9 +87,10 @@ export interface ChatMessage {
     timestamp: Date;
     isStreaming?: boolean;
     error?: string;
-    responseType?: 'text' | 'structured_table' | 'chart';
+    responseType?: 'text' | 'structured_table' | 'chart' | 'markdown_table';
     structuredData?: import('./structured-response.models').StructuredDataEvent;
     chartData?: ChartConfiguration;
+    markdownTable?: string; // For storing markdown table content separately
 }
 
 // Chart.js configuration interface

@@ -626,6 +626,17 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
               this.scrollService.onStreamingContent();
               break;
 
+            case 'table':
+              // Markdown table streaming
+              this.stopThinkingAnimation();
+              assistantMessage.responseType = 'markdown_table';
+              assistantMessage.markdownTable = event.data.content;
+              console.log('Markdown table received:', event.data);
+
+              // Notify scroll service for smooth scrolling
+              this.scrollService.onStreamingContent();
+              break;
+
             case 'done':
               // Stream completion - handled in complete callback
               break;
