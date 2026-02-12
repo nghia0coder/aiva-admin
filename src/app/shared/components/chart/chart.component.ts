@@ -16,18 +16,28 @@ Chart.register(...registerables, ChartDataLabels);
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+    }
+
     .chart-container {
       position: relative;
       width: 100%;
+      max-width: 100%;
       height: 400px;
       background: #ffffff;
       border-radius: 8px;
       padding: 16px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     canvas {
-      max-height: 100%;
+      width: 100% !important;
+      height: 100% !important;
     }
   `]
 })
@@ -108,7 +118,7 @@ export class ChartComponent implements OnInit, OnChanges, AfterViewInit, OnDestr
 
     // Update chart data
     this.chart.data = this.chartConfig.data;
-    
+
     // Update chart options if provided
     if (this.chartConfig.options) {
       this.chart.options = {

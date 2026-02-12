@@ -267,28 +267,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           next: (response) => {
             conversation.messages = response.messages
               .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
-              .map((m: MessageDto) => {
-                const message: ChatMessage = {
-                  id: m.id,
-                  role: m.role,
-                  content: m.content,
-                  timestamp: new Date(m.createdAt)
-                };
-
-                // Handle structured data if present
-                if (m.responseType && m.responseType.name === 'Structured' && m.structuredData) {
-                  message.responseType = 'structured_table';
-                  message.structuredData = m.structuredData;
-                }
-
-                // Handle chart data if present
-                if (m.responseType && m.responseType.name === 'Chart' && (m as any).chartData) {
-                  message.responseType = 'chart';
-                  message.chartData = (m as any).chartData;
-                }
-
-                return message;
-              });
+              .map((m: MessageDto) => this.mapMessageDtoToChatMessage(m));
 
             if (response.pagination) {
               conversation.messagePagination = response.pagination;
@@ -366,28 +345,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
           const olderMessages = response.messages
             .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
-            .map((m: MessageDto) => {
-              const message: ChatMessage = {
-                id: m.id,
-                role: m.role,
-                content: m.content,
-                timestamp: new Date(m.createdAt)
-              };
-
-              // Handle structured data if present
-              if (m.responseType && m.responseType.name === 'Structured' && m.structuredData) {
-                message.responseType = 'structured_table';
-                message.structuredData = m.structuredData;
-              }
-
-              // Handle chart data if present
-              if (m.responseType && m.responseType.name === 'Chart' && (m as any).chartData) {
-                message.responseType = 'chart';
-                message.chartData = (m as any).chartData;
-              }
-
-              return message;
-            });
+            .map((m: MessageDto) => this.mapMessageDtoToChatMessage(m));
 
           this.currentConversation.messages = [...olderMessages, ...this.currentConversation.messages];
 
@@ -439,28 +397,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
           const newerMessages = response.messages
             .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
-            .map((m: MessageDto) => {
-              const message: ChatMessage = {
-                id: m.id,
-                role: m.role,
-                content: m.content,
-                timestamp: new Date(m.createdAt)
-              };
-
-              // Handle structured data if present
-              if (m.responseType && m.responseType.name === 'Structured' && m.structuredData) {
-                message.responseType = 'structured_table';
-                message.structuredData = m.structuredData;
-              }
-
-              // Handle chart data if present
-              if (m.responseType && m.responseType.name === 'Chart' && (m as any).chartData) {
-                message.responseType = 'chart';
-                message.chartData = (m as any).chartData;
-              }
-
-              return message;
-            });
+            .map((m: MessageDto) => this.mapMessageDtoToChatMessage(m));
 
           this.currentConversation.messages = [...this.currentConversation.messages, ...newerMessages];
 
@@ -779,6 +716,52 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     navigator.clipboard.writeText(message.content).then(() => {
       // Could add toast notification here
     });
+  }
+
+  private mapMessageDtoToChatMessage(m: MessageDto): ChatMessage {
+    const message: ChatMessage = {
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      timestamp: new Date(m.createdAt)
+    };
+
+    // Handle structured data if present
+    const structuredData = m.structuredData as any;
+
+    // Check for chart in structuredData (from JSON example)
+    if (structuredData && structuredData.type === 'chart' && structuredData.chartConfig) {
+      message.responseType = 'chart';
+      try {
+        message.chartData = typeof structuredData.chartConfig === 'string'
+          ? JSON.parse(structuredData.chartConfig)
+          : structuredData.chartConfig;
+      } catch (e) {
+        console.error('Failed to parse chart config:', e);
+      }
+
+      // Use textResponse if available to avoid duplication in content (which often contains the table markdown)
+      if (structuredData.textResponse) {
+        message.content = structuredData.textResponse;
+      }
+
+      // Also potentially handle markdown table if we want to show it
+      if (structuredData.markdownTable) {
+        message.markdownTable = structuredData.markdownTable;
+      }
+    }
+    // Handle standard structured table
+    else if (m.responseType && m.responseType.name === 'Structured' && m.structuredData) {
+      message.responseType = 'structured_table';
+      message.structuredData = m.structuredData;
+    }
+    // Handle chart data legacy/explicit type
+    else if (m.responseType && m.responseType.name === 'Chart' && (m as any).chartData) {
+      message.responseType = 'chart';
+      message.chartData = (m as any).chartData;
+    }
+
+    return message;
   }
 
   /**
