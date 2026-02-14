@@ -67,7 +67,7 @@ export class StorageComponent implements OnInit {
   // Upload file modal properties
   showUploadModal = false;
   selectedFolder: FileItem | null = null;
-  selectedFile: File | null = null;
+  selectedFiles: File[] = [];
   isUploading = false;
   uploadError: string | null = null;
   uploadProgress = 0;
@@ -247,7 +247,7 @@ export class StorageComponent implements OnInit {
   /**
    * Format file size in bytes to human-readable format
    */
-  private formatFileSize(bytes: number): string {
+  formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
 
     const k = 1024;
@@ -586,7 +586,7 @@ export class StorageComponent implements OnInit {
     event.stopPropagation(); // Prevent folder navigation
     this.selectedFolder = folder;
     this.showUploadModal = true;
-    this.selectedFile = null;
+    this.selectedFiles = [];
     this.uploadError = null;
     this.uploadProgress = 0;
     this.closeFolderMenu();
@@ -598,7 +598,7 @@ export class StorageComponent implements OnInit {
   closeUploadModal(): void {
     this.showUploadModal = false;
     this.selectedFolder = null;
-    this.selectedFile = null;
+    this.selectedFiles = [];
     this.uploadError = null;
     this.uploadProgress = 0;
     this.isUploading = false;
@@ -625,7 +625,7 @@ export class StorageComponent implements OnInit {
 
     this.selectedFolder = currentFolder;
     this.showUploadModal = true;
-    this.selectedFile = null;
+    this.selectedFiles = [];
     this.uploadError = null;
     this.uploadProgress = 0;
   }
@@ -636,7 +636,7 @@ export class StorageComponent implements OnInit {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.selectedFile = input.files[0];
+      this.selectedFiles = Array.from(input.files);
       this.uploadError = null;
     }
   }
@@ -645,15 +645,17 @@ export class StorageComponent implements OnInit {
    * Upload file to folder
    */
   uploadFile(): void {
-    if (!this.selectedFile || !this.selectedFolder) {
+    if (this.selectedFiles.length === 0 || !this.selectedFolder) {
       this.uploadError = 'Please select a file to upload';
       return;
     }
 
     // Validate file size (e.g., max 100MB)
     const maxSize = 100 * 1024 * 1024; // 100MB
-    if (this.selectedFile.size > maxSize) {
-      this.uploadError = 'File size exceeds 100MB limit';
+    const oversizeFiles = this.selectedFiles.filter(file => file.size > maxSize);
+
+    if (oversizeFiles.length > 0) {
+      this.uploadError = `Some files exceed the 100MB limit: ${oversizeFiles.map(f => f.name).join(', ')}`;
       return;
     }
 
@@ -661,13 +663,13 @@ export class StorageComponent implements OnInit {
     this.uploadError = null;
     this.uploadProgress = 0;
 
-    this.folderService.uploadFile(
+    this.folderService.uploadFiles(
       this.storageId,
-      this.selectedFolder.id,
-      this.selectedFile
+      this.selectedFolder!.id,
+      this.selectedFiles
     ).subscribe({
-      next: (response) => {
-        console.log('File uploaded successfully:', response);
+      next: (responses) => {
+        console.log('Files uploaded successfully:', responses);
         this.uploadProgress = 100;
 
         // Close modal after a short delay
@@ -679,7 +681,7 @@ export class StorageComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error uploading file:', error);
-        this.uploadError = error.message || 'Failed to upload file. Please try again.';
+        this.uploadError = error.message || 'Failed to upload files. Please try again.';
         this.isUploading = false;
         this.uploadProgress = 0;
       }
@@ -687,18 +689,9 @@ export class StorageComponent implements OnInit {
   }
 
   /**
-   * Get file size display for selected file
-   */
-  get selectedFileSize(): string {
-    return this.selectedFile ? this.formatFileSize(this.selectedFile.size) : '';
-  }
-
-  /**
    * Check if upload is valid
    */
   get canUpload(): boolean {
-    return !!this.selectedFile && !this.isUploading;
+    return this.selectedFiles.length > 0 && !this.isUploading;
   }
 }
-
-

@@ -343,8 +343,8 @@
 
     <div class="modal-body">
       <div class="upload-area">
-        <input type="file" id="fileInput" class="file-input" (change)="onFileSelected($event)"
-          [disabled]="isUploading" />
+        <input type="file" id="fileInput" class="file-input" (change)="onFileSelected($event)" [disabled]="isUploading"
+          multiple />
         <label for="fileInput" class="file-input-label" [class.disabled]="isUploading">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M24 32V16M24 16L18 22M24 16L30 22" stroke="currentColor" stroke-width="3" stroke-linecap="round"
@@ -352,11 +352,18 @@
             <path d="M8 36H40" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
           </svg>
           <div class="upload-text">
-            @if (selectedFile) {
-            <p class="file-selected">{{ selectedFile.name }}</p>
-            <p class="file-size-text">{{ selectedFileSize }}</p>
+            @if (selectedFiles.length > 0) {
+            <div class="selected-files-list">
+              @for (file of selectedFiles; track file.name) {
+              <div class="selected-file-item">
+                <span class="file-selected">{{ file.name }}</span>
+                <span class="file-size-text">{{ formatFileSize(file.size) }}</span>
+              </div>
+              }
+            </div>
+            <p class="total-files-count">{{ selectedFiles.length }} files selected</p>
             } @else {
-            <p class="primary-text">Click to select a file</p>
+            <p class="primary-text">Click to select files</p>
             <p class="secondary-text">or drag and drop here</p>
             <p class="hint-text">Maximum file size: 100MB</p>
             }
@@ -457,4 +464,3 @@
   </div>
 </div>
 }
-

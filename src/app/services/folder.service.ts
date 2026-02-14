@@ -231,20 +231,23 @@ export class FolderService {
     }
 
     /**
-     * Upload a file to a folder
+     * Upload files to a folder
      * @param storageId - Storage ID
      * @param folderId - Folder ID to upload to
-     * @param file - File to upload
+     * @param files - Files to upload
      * @returns Observable of the upload response
      */
-    uploadFile(storageId: number, folderId: number, file: File): Observable<UploadFileResponse> {
+    uploadFiles(storageId: number, folderId: number, files: File[]): Observable<UploadFileResponse[]> {
         const formData = new FormData();
         formData.append('StorageId', storageId.toString());
         formData.append('FolderId', folderId.toString());
-        formData.append('File', file, file.name);
+
+        files.forEach(file => {
+            formData.append('Files', file, file.name);
+        });
 
         const endpoint = '/files/upload';
-        return this.apiService.post<FormData, UploadFileResponse>(endpoint, formData);
+        return this.apiService.post<FormData, UploadFileResponse[]>(endpoint, formData);
     }
 
     /**
