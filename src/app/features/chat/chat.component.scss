@@ -237,7 +237,7 @@ $bg-surface: #ffffff;
 .message-container {
   display: flex;
   gap: 1rem;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -316,9 +316,9 @@ $bg-surface: #ffffff;
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    font-size: 0.9rem;
-    min-width: 600px;
-    line-height: 1.5;
+    font-size: 0.75rem; // Reduced from 0.9rem for more compact display
+    min-width: unset; // Remove min-width to allow table to fit container
+    line-height: 1.4; // Slightly reduced for compactness
 
     thead {
       tr {
@@ -327,10 +327,10 @@ $bg-surface: #ffffff;
           top: 0;
           z-index: 10;
           background-color: #f8fafc;
-          padding: 1rem 1.5rem;
+          padding: 0.5rem 0.75rem; // Reduced from 1rem 1.5rem
           text-align: center;
           font-weight: 600;
-          font-size: 0.75rem;
+          font-size: 0.65rem; // Reduced from 0.75rem
           color: $text-secondary;
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -338,12 +338,12 @@ $bg-surface: #ffffff;
           white-space: nowrap;
 
           &:first-child {
-            padding-left: 2rem;
+            padding-left: 0.75rem; // Reduced from 2rem
             text-align: left;
           }
 
           &:last-child {
-            padding-right: 2rem;
+            padding-right: 0.75rem; // Reduced from 2rem
           }
         }
       }
@@ -354,7 +354,7 @@ $bg-surface: #ffffff;
         transition: background-color 0.2s ease;
 
         td {
-          padding: 1rem 1.5rem;
+          padding: 0.5rem 0.75rem; // Reduced from 1rem 1.5rem
           color: $text-primary;
           border-bottom: 1px solid $border-color;
           vertical-align: middle;
@@ -362,14 +362,14 @@ $bg-surface: #ffffff;
           text-align: center;
 
           &:first-child {
-            padding-left: 2rem;
+            padding-left: 0.75rem; // Reduced from 2rem
             font-weight: 500;
             color: $text-primary;
             text-align: left;
           }
 
           &:last-child {
-            padding-right: 2rem;
+            padding-right: 0.75rem; // Reduced from 2rem
           }
 
           // Auto-detect and right-align numeric content
@@ -398,6 +398,18 @@ $bg-surface: #ffffff;
           background-color: #f1f5f9;
         }
       }
+    }
+
+    // Images inside table cells - sized appropriately for chat width
+    td img {
+      max-width: 150px; // Increased from 50px to better utilize the 1200px container width
+      max-height: 150px; // Increased from 50px
+      width: auto;
+      height: auto;
+      object-fit: cover;
+      border-radius: 6px;
+      margin: 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
   }
 
