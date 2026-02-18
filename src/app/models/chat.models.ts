@@ -2,6 +2,7 @@
 export interface StreamChatRequest {
     conversationId: string; // Guid as string
     message: string;
+    additionalUserData?: string;
 }
 
 export interface CreateConversationRequest {

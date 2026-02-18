@@ -46,7 +46,7 @@
       </div>
       } @else {
       <!-- Messages Area -->
-      <div class="messages-area">
+      <div class="messages-area" (change)="onDynamicContentChange($event)">
         <!-- Loading indicator for older messages -->
         @if (currentConversation?.isLoadingOlderMessages) {
         <div class="loading-indicator older-messages-loading">
@@ -185,11 +185,6 @@
 
               <!-- Neural network thinking animation -->
               <div class="thinking-animation">
-                <div class="neural-waves">
-                  <div class="wave"></div>
-                  <div class="wave"></div>
-                  <div class="wave"></div>
-                </div>
                 <div class="thinking-text">
                   <span class="thinking-status">{{ thinkingStatus }}</span>
                   <span class="thinking-dots">

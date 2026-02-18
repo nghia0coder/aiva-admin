@@ -422,8 +422,63 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sendMessage();
   }
 
+  // Store the last modified table HTML to send with the next message
+  private lastTableHtml = '';
+
+  onTableHtmlChange(html: string): void {
+    if (!html) return;
+    console.log('ChatComponent: Table HTML Update Received, length:', html.length);
+    this.lastTableHtml = html;
+  }
+
+  /**
+   * Captures changes from inputs rendered inside standard content (innerHTML).
+   * Since these are not Angular components, we must:
+   * 1. Listen for events at the container level (Event Delegation).
+   * 2. Manually sync the DOM property state to HTML attributes (because innerHTML reads attributes).
+   * 3. Extract the modified HTML to send back to the server.
+   */
+  onDynamicContentChange(event: Event): void {
+    const target = event.target as HTMLElement;
+
+    // Only care about inputs inside tables (or any interactive element we want to track)
+    const table = target.closest('table');
+    if (!table) return;
+
+    // Sync state to attributes so outerHTML captures the current value
+    if (target instanceof HTMLInputElement) {
+      if (target.type === 'checkbox') {
+        if (target.checked) {
+          target.setAttribute('checked', 'checked');
+        } else {
+          target.removeAttribute('checked');
+        }
+      } else {
+        target.setAttribute('value', target.value);
+      }
+    } else if (target instanceof HTMLSelectElement) {
+      // For select, we need to handle the selected attribute on options
+      const options = Array.from(target.options);
+      options.forEach(opt => {
+        if (opt.selected) {
+          opt.setAttribute('selected', 'selected');
+        } else {
+          opt.removeAttribute('selected');
+        }
+      });
+    }
+
+    // Capture the updated HTML of the table
+    // This allows the backend to see the user's selections
+    this.onTableHtmlChange(table.outerHTML);
+  }
+
   async sendMessage(): Promise<void> {
     if (!this.userInput.trim() || this.isLoading) return;
+
+    // Log previous state
+    console.log('Sending message. Last Table HTML length:', this.lastTableHtml.length);
+    if (!this.lastTableHtml) console.warn('Warning: lastTableHtml is empty');
 
     const messageContent = this.userInput.trim();
     this.userInput = '';
@@ -482,14 +537,19 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     // Wait for DOM to render the new messages before scrolling
     this.scrollToBottomAfterRender();
 
+    // Get the additional user data (table HTML) and clear it
+    const additionalUserData = this.lastTableHtml;
+    this.lastTableHtml = '';
+
     // Stream the response
-    this.streamResponse(this.currentConversation!.id, messageContent, assistantMessage);
+    this.streamResponse(this.currentConversation!.id, messageContent, assistantMessage, additionalUserData);
   }
 
   private streamResponse(
     conversationId: string,
     message: string,
-    assistantMessage: ChatMessage
+    assistantMessage: ChatMessage,
+    additionalUserData?: string
   ): void {
     this.cancelStream();
 
@@ -502,7 +562,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     // Notify scroll service that streaming is starting
     this.scrollService.onStreamingStart();
 
-    this.currentStreamSubscription = this.chatService.streamChat(conversationId, message)
+    this.currentStreamSubscription = this.chatService.streamChat(conversationId, message, additionalUserData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (event) => {

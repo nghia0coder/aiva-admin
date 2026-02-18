@@ -62,10 +62,11 @@ export class ChatService {
      * Stream chat response from AI
      * Returns SSE events which can be 'message', 'structured_data', 'done', or 'error'
      */
-    streamChat(conversationId: string, message: string): Observable<import('../models/structured-response.models').SSEEvent> {
+    streamChat(conversationId: string, message: string, additionalUserData?: string): Observable<import('../models/structured-response.models').SSEEvent> {
         const request: StreamChatRequest = {
             conversationId,
-            message
+            message,
+            additionalUserData
         };
 
         return this.api.stream<import('../models/structured-response.models').SSEEvent>(this.endpoints.streamChat(conversationId), request);
