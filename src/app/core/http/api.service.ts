@@ -203,6 +203,12 @@ export class ApiService {
                                             type: 'table',
                                             data: data
                                         } as T);
+                                    } else if (eventType === 'action') {
+                                        // Handle structured action event
+                                        observer.next({
+                                            type: 'action',
+                                            data: data
+                                        } as T);
                                     } else {
                                         // Default 'message' event
                                         // Support both old format (direct data) and new format (wrapped in event)

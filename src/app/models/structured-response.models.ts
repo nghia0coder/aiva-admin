@@ -72,6 +72,7 @@ export type SSEEventType =
     | 'structured_data_complete'     // Global actions after all rows
     | 'chart'                        // Chart data (Chart.js configuration)
     | 'table'                        // Markdown table content
+    | 'action'                       // Structured action (redirect, modal, etc.)
     | 'done'                         // Stream completion
     | 'error';                       // Error event
 
@@ -83,6 +84,11 @@ export interface SSEEvent {
 /**
  * Specific SSE Event Data Types
  */
+export interface ActionEventData {
+    actionType: string;
+    payload: any;
+}
+
 export interface MessageEventData {
     content: string;
 }

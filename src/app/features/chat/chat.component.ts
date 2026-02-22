@@ -16,7 +16,7 @@ import { ChatScrollDirective } from '@/shared/directives/chat-scroll.directive';
 import { NewMessagesIndicatorComponent } from '@/shared/components/new-messages-indicator/new-messages-indicator.component';
 import { StructuredTableComponent } from '@/shared/components/structured-table/structured-table.component';
 import { ChartComponent } from '@/shared/components/chart/chart.component';
-import { ActionMetadata } from '@/models/structured-response.models';
+import { ActionMetadata, ActionEventData } from '@/models/structured-response.models';
 
 @Component({
   selector: 'app-chat',
@@ -634,6 +634,12 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
               this.scrollService.onStreamingContent();
               break;
 
+            case 'action':
+              // Handle structured actions (e.g., redirect)
+              this.stopThinkingAnimation();
+              this.handleAction(event.data);
+              break;
+
             case 'done':
               // Stream completion - handled in complete callback
               break;
@@ -977,5 +983,30 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     requestAnimationFrame(() => {
       requestAnimationFrame(checkAndScroll);
     });
+  }
+
+  /**
+   * Handles structured actions received from the backend
+   */
+  private handleAction(data: ActionEventData): void {
+    const { actionType, payload } = data;
+    console.log('ChatComponent: Action received:', actionType, payload);
+
+    switch (actionType) {
+      case 'redirect':
+        const url = payload.url;
+        const delay = parseInt(payload.delay || '0');
+
+        console.log(`ChatComponent: Opening ${url} in a new tab in ${delay}ms...`);
+
+        setTimeout(() => {
+          // Open in a new tab
+          window.open(url, '_blank');
+        }, delay);
+        break;
+
+      default:
+        console.warn('ChatComponent: Unknown action type:', actionType);
+    }
   }
 }
