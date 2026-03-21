@@ -294,6 +294,15 @@ export class ChatService {
         const current = this.conversationsSubject.value;
         const index = current.findIndex(c => c.id === conversation.id);
         if (index > -1) {
+            const existing = current[index];
+            // If the incoming title is "New Conversation" but the existing one is not,
+            // it means we probably have a stale object from a SignalR update.
+            // We should preserve the existing title.
+            if (conversation.title === 'New Conversation' && existing.title !== 'New Conversation') {
+                console.log(`Preserving existing title "${existing.title}" over "New Conversation" for ${conversation.id}`);
+                conversation.title = existing.title;
+            }
+            
             current[index] = conversation;
             this.conversationsSubject.next([...current]);
         }

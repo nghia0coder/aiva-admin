@@ -12,7 +12,7 @@ export class SignalRService {
     private readonly destroyRef = inject(DestroyRef);
 
     // SignalR Hub Configuration
-    private readonly hubUrl = 'https://localhost:57679/hubs/conversation';
+    private readonly hubUrl = environment.apiConfig.signalrHubUrl;
     private hubConnection: signalR.HubConnection | null = null;
 
     // Connection state management

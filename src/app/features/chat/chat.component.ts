@@ -210,6 +210,20 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(conversations => {
         this.conversations = conversations;
+
+        // Sync current conversation title and updatedAt with the list (which gets SignalR updates)
+        if (this.currentConversation) {
+          const updated = conversations.find(c => c.id === this.currentConversation?.id);
+          if (updated) {
+            if (updated.title !== this.currentConversation.title) {
+              console.log(`Syncing currentConversation title: ${this.currentConversation.title} -> ${updated.title}`);
+              this.currentConversation.title = updated.title;
+            }
+            if (updated.updatedAt > this.currentConversation.updatedAt) {
+              this.currentConversation.updatedAt = updated.updatedAt;
+            }
+          }
+        }
       });
   }
 
@@ -265,6 +279,10 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
+            if (response.title) {
+              conversation.title = response.title;
+            }
+
             conversation.messages = response.messages
               .filter((m: MessageDto) => m.role === 'user' || m.role === 'assistant')
               .map((m: MessageDto) => this.mapMessageDtoToChatMessage(m));
