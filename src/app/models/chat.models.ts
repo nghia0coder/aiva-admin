@@ -3,6 +3,7 @@ export interface StreamChatRequest {
     conversationId: string; // Guid as string
     message: string;
     additionalUserData?: string;
+    hasImages?: boolean;
 }
 
 export interface CreateConversationRequest {
@@ -92,6 +93,7 @@ export interface ChatMessage {
     structuredData?: import('./structured-response.models').StructuredDataEvent;
     chartData?: ChartConfiguration;
     markdownTable?: string; // For storing markdown table content separately
+    images?: { url: string; file?: File }[]; // Display URLs or File objects for image preview
 }
 
 // Chart.js configuration interface

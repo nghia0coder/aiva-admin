@@ -72,7 +72,7 @@ export class ApiService {
      * Note: Uses fetch API which is not intercepted by Angular HTTP interceptors.
      * Therefore, we manually acquire and attach the token.
      */
-    stream<T>(endpoint: string, body: unknown): Observable<T> {
+    stream<T>(endpoint: string, body: unknown | FormData): Observable<T> {
         // Get token first, then stream
         return from(this.getAccessToken()).pipe(
             switchMap(token => {
@@ -112,20 +112,26 @@ export class ApiService {
 
     private createStreamObservable<T>(
         endpoint: string,
-        body: unknown,
+        body: unknown | FormData,
         token: string
     ): Observable<T> {
         return new Observable<T>((observer) => {
             const controller = new AbortController();
 
+            const isFormData = body instanceof FormData;
+            const headers: Record<string, string> = {
+                'Accept': 'text/event-stream',
+                ...(token && { 'Authorization': `Bearer ${token}` }),
+            };
+
+            if (!isFormData) {
+                headers['Content-Type'] = 'application/json';
+            }
+
             fetch(`${this.baseUrl}${endpoint}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'text/event-stream',
-                    ...(token && { 'Authorization': `Bearer ${token}` }),
-                },
-                body: JSON.stringify(body),
+                headers,
+                body: isFormData ? (body as FormData) : JSON.stringify(body),
                 signal: controller.signal,
             })
                 .then(async (response) => {

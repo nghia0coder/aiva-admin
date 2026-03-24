@@ -567,7 +567,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     conversationId: string,
     message: string,
     assistantMessage: ChatMessage,
-    additionalUserData?: string
+    additionalUserData?: string,
+    images?: File[]
   ): void {
     this.cancelStream();
 
@@ -580,7 +581,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     // Notify scroll service that streaming is starting
     this.scrollService.onStreamingStart();
 
-    this.currentStreamSubscription = this.chatService.streamChat(conversationId, message, additionalUserData)
+    this.currentStreamSubscription = this.chatService.streamChat(conversationId, message, additionalUserData, images)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (event) => {

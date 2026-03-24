@@ -62,14 +62,28 @@ export class ChatService {
      * Stream chat response from AI
      * Returns SSE events which can be 'message', 'structured_data', 'done', or 'error'
      */
-    streamChat(conversationId: string, message: string, additionalUserData?: string): Observable<import('../models/structured-response.models').SSEEvent> {
-        const request: StreamChatRequest = {
-            conversationId,
-            message,
-            additionalUserData
-        };
+    streamChat(conversationId: string, message: string, additionalUserData?: string, images?: File[]): Observable<import('../models/structured-response.models').SSEEvent> {
+        // We ALWAYS use FormData because FastEndpoints AllowFormData() strictly mandates
+        // a 'multipart/form-data' or 'application/x-www-form-urlencoded' Content-Type.
+        // Sending 'application/json' will trigger a 415 Unsupported Media Type error.
+        
+        const formData = new FormData();
+        formData.append('conversationId', conversationId);
+        formData.append('message', message);
+        if (additionalUserData) {
+            formData.append('additionalUserData', additionalUserData);
+        }
+        
+        if (images && images.length > 0) {
+            formData.append('hasImages', 'true');
+            images.forEach((file) => {
+                formData.append('images', file, file.name);
+            });
+        } else {
+            formData.append('hasImages', 'false');
+        }
 
-        return this.api.stream<import('../models/structured-response.models').SSEEvent>(this.endpoints.streamChat(conversationId), request);
+        return this.api.stream<import('../models/structured-response.models').SSEEvent>(this.endpoints.streamChat(conversationId), formData);
     }
 
     /**
