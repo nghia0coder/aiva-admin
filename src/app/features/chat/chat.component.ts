@@ -57,6 +57,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     'Thinking'
   ];
   private thinkingInterval: ReturnType<typeof setInterval> | null = null;
+  pastedImages: { file: File, url: string }[] = [];
 
   conversations: Conversation[] = [];
   currentConversation: Conversation | null = null;
@@ -492,7 +493,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async sendMessage(): Promise<void> {
-    if (!this.userInput.trim() || this.isLoading) return;
+    if ((!this.userInput.trim() && this.pastedImages.length === 0) || this.isLoading) return;
 
     // Log previous state
     console.log('Sending message. Last Table HTML length:', this.lastTableHtml.length);
@@ -525,12 +526,20 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
+    // Capture the images for this specific message
+    const messageImages = [...this.pastedImages];
+    const imageFilesToUpload = messageImages.map(img => img.file);
+    
+    // Clear the pasted images from UI immediately
+    this.pastedImages = [];
+
     // Add user message
     const userMessage: ChatMessage = {
       id: this.chatService.generateMessageId(),
       role: 'user',
       content: messageContent,
-      timestamp: new Date()
+      timestamp: new Date(),
+      images: messageImages
     };
 
     this.currentConversation!.messages.push(userMessage);
@@ -560,7 +569,46 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.lastTableHtml = '';
 
     // Stream the response
-    this.streamResponse(this.currentConversation!.id, messageContent, assistantMessage, additionalUserData);
+    this.streamResponse(this.currentConversation!.id, messageContent, assistantMessage, additionalUserData, imageFilesToUpload);
+  }
+
+  onPaste(event: ClipboardEvent): void {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image/') !== -1) {
+        // Enforce maximum 5 images
+        if (this.pastedImages.length >= 5) {
+          this.errorMessage = 'Maximum of 5 images allowed per message.';
+          break;
+        }
+
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        // Ensure file size is within limits (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          this.errorMessage = 'Image size exceeds maximum limit of 10MB.';
+          continue;
+        }
+
+        // Create object URL for preview
+        const url = URL.createObjectURL(file);
+        this.pastedImages.push({ file, url });
+        
+        // Clear any previous error messages when successfully pasting
+        this.errorMessage = '';
+      }
+    }
+  }
+
+  removePastedImage(index: number): void {
+    if (index >= 0 && index < this.pastedImages.length) {
+      URL.revokeObjectURL(this.pastedImages[index].url);
+      this.pastedImages.splice(index, 1);
+    }
   }
 
   private streamResponse(

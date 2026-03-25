@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Observable, Subject, filter } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
+import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { SignalRConnectionState, TitleUpdatedMessage } from '../models/chat.models';
 import { environment } from '../../environments/environment';
 
@@ -96,6 +97,13 @@ export class SignalRService {
 
             return result.accessToken;
         } catch (error) {
+            if (error instanceof InteractionRequiredAuthError || (error as any).name === 'InteractionRequiredAuthError') {
+                console.warn('Silent token acquisition failed, attempting interactive login...');
+                const result = await this.msalService.instance.acquireTokenPopup({
+                    scopes: environment.apiConfig.scopes
+                });
+                return result.accessToken;
+            }
             console.error('Failed to acquire access token for SignalR:', error);
             throw error;
         }

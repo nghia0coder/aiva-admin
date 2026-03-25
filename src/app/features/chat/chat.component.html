@@ -89,6 +89,17 @@
                 [class.has-content]="message.content.length > 0" [innerHTML]="message.content | markdown"></div>
               }
 
+              <!-- Show attached images -->
+              @if (message.images && message.images.length > 0) {
+              <div class="message-images">
+                @for (img of message.images; track img.url) {
+                <div class="message-image-container">
+                  <img [src]="img.url" alt="Attached image" />
+                </div>
+                }
+              </div>
+              }
+
               <!-- For structured responses, show intro text first -->
               @if ((message.responseType === 'structured_table' || message.responseType === 'chart' ||
               message.responseType === 'markdown_table') && message.content) {
@@ -209,12 +220,34 @@
       <!-- New Messages Indicator -->
       <app-new-messages-indicator />
 
+      <!-- Error Message Area -->
+      @if (errorMessage) {
+      <div class="error-message-bar">
+        <span>{{ errorMessage }}</span>
+        <button class="dismiss-error" (click)="errorMessage = ''">×</button>
+      </div>
+      }
+
       <!-- Input Area (sticky inside the scroll container) -->
       <div class="input-area">
+        @if (pastedImages.length > 0) {
+        <div class="pasted-images-preview">
+          @for (img of pastedImages; track img.url; let i = $index) {
+          <div class="pasted-image-item">
+            <img [src]="img.url" alt="Pasted attachment preview" />
+            <button class="remove-image-btn" (click)="removePastedImage(i)" title="Remove image">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          }
+        </div>
+        }
         <div class="input-container">
           <textarea #messageInput class="message-input" [(ngModel)]="userInput" (keydown)="onKeyDown($event)"
-            placeholder="Message AIVA..." rows="1" [disabled]="isLoading"></textarea>
-          <button class="send-btn" [disabled]="!userInput.trim() || isLoading" (click)="sendMessage()">
+            (paste)="onPaste($event)" placeholder="Message AIVA... (Paste images Ctrl+V)" rows="1" [disabled]="isLoading"></textarea>
+          <button class="send-btn" [disabled]="(!userInput.trim() && pastedImages.length === 0) || isLoading" (click)="sendMessage()">
             @if (isLoading) {
             <div class="btn-spinner"></div>
             } @else {
