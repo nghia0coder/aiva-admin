@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit, OnDestroy, inject, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, ViewChildren, QueryList, OnInit, OnDestroy, inject, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -36,6 +36,7 @@ import { ActionMetadata, ActionEventData } from '@/models/structured-response.mo
 export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   @ViewChild('messageInput') private messageInput!: ElementRef;
+  @ViewChildren(StructuredTableComponent) private structuredTables!: QueryList<StructuredTableComponent>;
 
   private readonly chatService = inject(ChatService);
   private readonly scrollService = inject(ChatScrollService);
@@ -809,11 +810,34 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // Notify scroll service that streaming ended
         this.scrollService.onStreamingEnd();
+
+        // Uncheck all items after successful response
+        setTimeout(() => {
+          this.uncheckAllCheckboxes();
+        }, 2000);
       } else {
         setTimeout(checkComplete, 50);
       }
     };
     checkComplete();
+  }
+
+  private uncheckAllCheckboxes(): void {
+    if (this.messagesContainer) {
+      const checkboxes = this.messagesContainer.nativeElement.querySelectorAll('input[type="checkbox"]:checked');
+      checkboxes.forEach((cb: HTMLInputElement) => {
+        cb.checked = false;
+        cb.removeAttribute('checked');
+      });
+    }
+
+    if (this.structuredTables) {
+      this.structuredTables.forEach(table => {
+        if (table.selectedRows) {
+          table.selectedRows.clear();
+        }
+      });
+    }
   }
 
   private cancelStream(): void {
