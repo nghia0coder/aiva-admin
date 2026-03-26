@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 interface NavItem {
   id: string;
@@ -34,7 +35,22 @@ export class SidebarComponent {
     }
   ];
 
-  constructor(private router: Router) {}
+  private readonly authService = inject(AuthService);
+
+  constructor(private router: Router) {
+    const userEmail = this.authService.getUserEmail() || '';
+    if (!userEmail.endsWith('@siue.edu.vn') && !userEmail.endsWith('@siu.edu.vn')) {
+      this.navItems = this.navItems.filter(item => item.id !== 'storage');
+    }
+  }
+
+  get appName(): string {
+    const userEmail = this.authService.getUserEmail() || '';
+    if (userEmail.endsWith('@siue.edu.vn') || userEmail.endsWith('@siu.edu.vn')) {
+      return 'AIVA Admin';
+    }
+    return 'AIVA';
+  }
 
   toggleSidebar(): void {
     this.isCollapsed = !this.isCollapsed;
